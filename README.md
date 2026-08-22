@@ -148,5 +148,8 @@ upstream is the current `owed` row on CalMind.
 
 Born 2026-08-22 from a four-repo, hash-verified analysis (every `exact` row
 was byte-compared in every listed repo; the fork and owed notes were
-spot-diffed). The `owed` rows at birth are the analysis' findings, kept as
-the check's opening work list rather than papered over.
+spot-diffed). It opened with nine `owed` rows — verified lags the analysis
+found and the check kept score of rather than papering over. All nine have
+since been copied down and promoted to `exact`, so every consumer now
+carries canon everywhere the manifest asks for it: **0 drifted, 0 owed**.
+What remains divergent is `fork`, and every fork row says why.

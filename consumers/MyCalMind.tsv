@@ -111,12 +111,12 @@ exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs
 exact	canon/tsconfig.base.json	tsconfig.base.json	
 fork	canon/app/src/components/SyncDot.tsx	app/src/components/SyncDot.tsx	deliberate: offline/syncing branches deleted — there is no server
 fork	canon/packages/core/package.json	packages/core/package.json	version field only (each edition numbers its own core)
-owed	canon/app/src/components/CalendarPick.tsx	app/src/components/CalendarPick.tsx	lags: missing the calbox testID
-owed	canon/app/src/components/IngredientBadge.tsx	app/src/components/IngredientBadge.tsx	lags: carries the older 08-18 emoji-icon treatment
-owed	canon/app/src/components/RichText.tsx	app/src/components/RichText.tsx	NEW here: Notes.tsx needs it; imports only react-native and core richLines
-owed	canon/app/src/screens/Notes.tsx	app/src/screens/Notes.tsx	lags the RichText fix — asterisks printed that had just been parsed away; lands with RichText.tsx
-owed	canon/packages/core/src/day.ts	packages/core/src/day.ts	lags CalMind 2026-08-20: DayReminder.late + dayHeading
-owed	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	same four-export superset owed as CalMind
-owed	canon/packages/core/src/types.ts	packages/core/src/types.ts	lags CalMind 2026-08-21: MeetAvail
-owed	canon/packages/core/test/gridfuzz.test.ts	packages/core/test/gridfuzz.test.ts	lags: missing the 30s timeout
-owed	canon/packages/core/test/richfuzz.test.ts	packages/core/test/richfuzz.test.ts	lags: missing the 30s timeout
+exact	canon/app/src/components/CalendarPick.tsx	app/src/components/CalendarPick.tsx	
+exact	canon/app/src/components/IngredientBadge.tsx	app/src/components/IngredientBadge.tsx	
+exact	canon/app/src/components/RichText.tsx	app/src/components/RichText.tsx	
+exact	canon/app/src/screens/Notes.tsx	app/src/screens/Notes.tsx	
+exact	canon/packages/core/src/day.ts	packages/core/src/day.ts	
+exact	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	
+exact	canon/packages/core/src/types.ts	packages/core/src/types.ts	
+exact	canon/packages/core/test/gridfuzz.test.ts	packages/core/test/gridfuzz.test.ts	
+exact	canon/packages/core/test/richfuzz.test.ts	packages/core/test/richfuzz.test.ts	
