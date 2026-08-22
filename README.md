@@ -104,6 +104,28 @@ Now both sides assert against the file. CalMind's copy of those tests proves
 before — and every client proves its own constants match. MyCalMind does not
 carry it: no server, no protocol.
 
+### Platforms
+
+The release lanes ship the **web** (and dispatch the Windows job in CI). The
+two a release does not ship by itself have their own step:
+
+```sh
+sh bin/build-platforms.sh CalMind          # macOS bundle + the connected iPhone
+sh bin/build-platforms.sh ChefMind --ios   # just the phone
+npm run dtp -- all --platforms             # release, then build both per app
+```
+
+It lives here rather than three times over in the apps because a deploy script
+belongs to its app when its DESTINATIONS do — a production document root is
+the one thing that must never be built from a variable — and a device build
+has no destination to get wrong. A platform failure is reported and does not
+un-ship a release that already tagged and pushed, but the run still ends
+non-zero so "it all worked" cannot be read off the exit status.
+
+**Android is not covered.** No emulator, no signing config and no attached
+device here, so a step for it would be one that has never run — which reads as
+covered and is not.
+
 ### Releasing the whole suite
 
 ```sh

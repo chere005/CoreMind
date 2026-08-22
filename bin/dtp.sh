@@ -6,6 +6,9 @@
 #   sh bin/dtp.sh --only AcctMind    that one alone
 #   sh bin/dtp.sh all --plan         resolve the order and stop
 #   sh bin/dtp.sh all --full         tdtp: the full test run in each lane
+#   sh bin/dtp.sh all --platforms    …and build the platforms a release does
+#                                    not ship by itself: the macOS bundle and
+#                                    the iOS build on the connected phone
 #
 # Each repo's OWN lane does the work — tools/dtp.sh in the four apps, which
 # already bump the minor version, refuse a dirty tree or a non-main branch,
@@ -32,13 +35,14 @@ downstream_of() {
   esac
 }
 
-FULL=0; ONLY=0; PLANONLY=0; DEVICES=0; WANT=""
+FULL=0; ONLY=0; PLANONLY=0; DEVICES=0; PLATFORMS=0; WANT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --full)         FULL=1 ;;
     --only)         ONLY=1 ;;
     --plan)         PLANONLY=1 ;;
     --with-devices) DEVICES=1 ;;
+    --platforms)    PLATFORMS=1 ;;
     -*)             echo "unknown flag: $1" >&2; exit 1 ;;
     all)            WANT="$ORDER"; DEVICES=1 ;;
     *)              WANT="$WANT $1" ;;
@@ -136,6 +140,7 @@ PY
 esac
 [ "$PLANONLY" = 0 ] || exit 0
 
+PLATFORM_OK=""; PLATFORM_BAD=""
 for T in $PLAN; do
   echo ""
   echo "──────────────────────────────── $LANE $T"
@@ -187,6 +192,19 @@ for T in $PLAN; do
     *)
       R="$PARENT/$T"
       if [ "$FULL" = 1 ]; then ( cd "$R" && sh tools/tdtp.sh ); else ( cd "$R" && sh tools/dtp.sh ); fi
+      # THE PLATFORMS THE RELEASE DID NOT SHIP. Run AFTER the lane, and its
+      # failure is reported rather than fatal: by this point the app is
+      # deployed, tagged and pushed, and none of that comes back because a
+      # Rust build or a phone did not cooperate. The run still ends non-zero,
+      # so "it all worked" cannot be read off the exit status.
+      if [ "$PLATFORMS" = 1 ] && [ "$T" != "MyCalMind" ]; then
+        if sh bin/build-platforms.sh "$T"; then
+          PLATFORM_OK="$PLATFORM_OK $T"
+        else
+          echo "   PLATFORM BUILD FAILED for $T — the release itself shipped" >&2
+          PLATFORM_BAD="$PLATFORM_BAD $T"
+        fi
+      fi
       ;;
   esac
 done
@@ -194,3 +212,10 @@ done
 echo ""
 echo "────────────────────────────────"
 echo "$LANE complete:$PLAN"
+if [ "$PLATFORMS" = 1 ]; then
+  [ -z "$PLATFORM_OK" ]  || echo "platforms built:$PLATFORM_OK"
+  if [ -n "$PLATFORM_BAD" ]; then
+    echo "platforms FAILED:$PLATFORM_BAD (their releases shipped; the builds did not)" >&2
+    exit 1
+  fi
+fi
