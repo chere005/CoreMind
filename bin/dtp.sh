@@ -168,7 +168,7 @@ for T in $PLAN; do
       done
       sh bin/check-drift.sh
       VER=$(node -p "require('./package.json').version")
-      if git rev-parse -q --verify "refs/tags/v$VER" >/dev/null; then
+      if git rev-parse -q --verify "refs/tags/$VER" >/dev/null; then
         NEW=$(echo "$VER" | awk -F. '{printf "%d.%d.0", $1, $2+1}')
         perl -i -pe "s|\"version\": \"\Q$VER\E\"|\"version\": \"$NEW\"|" package.json
         grep -q "\"version\": \"$NEW\"" package.json \
@@ -176,13 +176,13 @@ for T in $PLAN; do
         git add package.json && git commit -q -m "CoreMind $NEW"
         VER="$NEW"
       fi
-      git tag -a "v$VER" -m "CoreMind $VER"
+      git tag -a "$VER" -m "CoreMind $VER"
       if ! git push --atomic --follow-tags origin main; then
-        git tag -d "v$VER" >/dev/null
+        git tag -d "$VER" >/dev/null
         echo "CoreMind's push was rejected — nothing tagged. Pull and re-run." >&2
         exit 1
       fi
-      echo "==> CoreMind v$VER tagged and pushed"
+      echo "==> CoreMind $VER tagged and pushed"
       ;;
     *)
       R="$PARENT/$T"
