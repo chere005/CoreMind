@@ -90,6 +90,20 @@ Both edges are real, not tidy:
 MyCalMind installs onto a connected iPhone, so it never rides an unattended
 cascade: name it, or pass `--with-devices` (which `all` implies).
 
+### The protocol contract
+
+`canon/spec/protocol.json` is a contract rather than a copy. Its two terms —
+the record-id pattern and the sync batch limit — used to live only in
+CalMind's `server/lib/app.php`, and were read *out of that PHP* by core tests:
+ChefMind's had to reach across the filesystem into a sibling checkout, and
+skipped themselves when there wasn't one, so on a fresh clone the check that
+keeps ids acceptable to the server did not run at all.
+
+Now both sides assert against the file. CalMind's copy of those tests proves
+`app.php` *and* core agree with it — the server-side direction nothing checked
+before — and every client proves its own constants match. MyCalMind does not
+carry it: no server, no protocol.
+
 ### Releasing the whole suite
 
 ```sh

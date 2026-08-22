@@ -137,6 +137,7 @@ exact	canon/packages/core/test/watchfeed.test.ts	packages/core/test/watchfeed.te
 exact	canon/packages/core/tsconfig.json	packages/core/tsconfig.json	
 exact	canon/spec/clock.json	spec/clock.json	
 exact	canon/spec/parse.json	spec/parse.json	
+exact	canon/spec/protocol.json	spec/protocol.json	
 exact	canon/spec/repeats.json	spec/repeats.json	
 exact	canon/spec/sort.json	spec/sort.json	
 exact	canon/tools/patch-web-html.mjs	tools/patch-web-html.mjs	

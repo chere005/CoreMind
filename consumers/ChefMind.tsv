@@ -110,6 +110,7 @@ exact	canon/packages/core/test/watchfeed.test.ts	packages/core/test/watchfeed.te
 exact	canon/packages/core/tsconfig.json	packages/core/tsconfig.json	
 exact	canon/spec/clock.json	spec/clock.json	
 exact	canon/spec/parse.json	spec/parse.json	
+exact	canon/spec/protocol.json	spec/protocol.json	
 exact	canon/spec/repeats.json	spec/repeats.json	
 exact	canon/spec/sort.json	spec/sort.json	
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
@@ -131,9 +132,9 @@ fork	canon/packages/core/package.json	packages/core/package.json	differs from ca
 fork	canon/packages/core/src/meetreq.ts	packages/core/src/meetreq.ts	pre-MeetAvail stub kept for record lockstep
 fork	canon/packages/core/src/normalize.ts	packages/core/src/normalize.ts	deliberate: seed-folder table (gold Shopping, no calendar/habit starters), folder() shopping param, appFolders filter
 fork	canon/packages/core/src/types.ts	packages/core/src/types.ts	deliberate: Folder.shopping flag; ALSO lags MeetAvail — reconcile by hand
-fork	canon/packages/core/test/batchlimit.test.ts	packages/core/test/batchlimit.test.ts	sibling-checkout path + CALMIND_REPO + visible skip (needed standalone)
+fork	canon/packages/core/test/batchlimit.test.ts	packages/core/test/batchlimit.test.ts	no server here: canon carries the app.php-agrees-with-the-contract half, which only CalMind can run
 fork	canon/packages/core/test/normalize.test.ts	packages/core/test/normalize.test.ts	follows normalize.ts fork
-fork	canon/packages/core/test/protocolids.test.ts	packages/core/test/protocolids.test.ts	sibling-checkout path + CALMIND_REPO + visible skip (needed standalone); CalMind reads its own server in-repo
+fork	canon/packages/core/test/protocolids.test.ts	packages/core/test/protocolids.test.ts	no server here: canon carries the app.php-agrees-with-the-contract half, which only CalMind can run
 fork	canon/tools/patch-web-html.mjs	tools/patch-web-html.mjs	dist path + app-name strings
 fork	canon/tools/source-digest.mjs	tools/source-digest.mjs	SOURCES path list
 fork	canon/tools/sw.js	tools/sw.js	cache-prefix lines
