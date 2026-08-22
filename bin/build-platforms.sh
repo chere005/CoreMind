@@ -101,6 +101,17 @@ PY
   ( cd "$ROOT/$APPDIR" && LANG=en_US.UTF-8 npx expo prebuild --platform ios --clean ) \
     || { echo "[$APP] prebuild failed" >&2; exit 1; }
 
+  # THE PLIST, checked here because here is where it means something. It goes
+  # stale the moment a version bumps and only refreshes on a prebuild, so an
+  # app whose `npm test` asserted it blocked its own next release. Right after
+  # prebuild it must agree, and a binary about to go on a phone is exactly the
+  # thing AGENTS.md's story is about: bump the config, build without
+  # prebuilding, install a binary carrying the old number.
+  if node -e "process.exit((require('$ROOT/package.json').scripts||{})['test:version:device']?0:1)" 2>/dev/null; then
+    ( cd "$ROOT" && npm run -s test:version:device ) \
+      || { echo "[$APP] the prebuild output disagrees with the version — not installing" >&2; exit 1; }
+  fi
+
   WS=$(ls -d "$ROOT/$APPDIR"/ios/*.xcworkspace 2>/dev/null | head -1)
   [ -n "$WS" ] || { echo "[$APP] prebuild produced no xcworkspace" >&2; exit 1; }
   SCHEME=$(basename "$WS" .xcworkspace)
