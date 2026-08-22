@@ -88,8 +88,18 @@ for TSV in consumers/*.tsv; do
   while IFS="$(printf '\t')" read -r MODE CANON LOCAL NOTE || [ -n "$MODE" ]; do
     case "$MODE" in ''|'#'*) continue ;; esac
     [ -f "$CANON" ] || { echo "  canon file missing: $CANON" >&2; exit 1; }
-    [ -f "$ROOT/$LOCAL" ] || { echo "  $NAME no longer carries $LOCAL" >&2; exit 1; }
-    cmp -s "$CANON" "$ROOT/$LOCAL" && continue   # already agrees
+    # A missing local file is an error for `exact` and `fork` — the manifest
+    # says this repo CARRIES it, and a manifest that overstates what is shared
+    # is worse than none. For `owed` it is the ordinary case of a copy-down
+    # that ADDS a file the consumer never had (MyCalMind gaining RichText.tsx
+    # so Notes.tsx can land): the row's whole point is that it is not there yet.
+    if [ ! -f "$ROOT/$LOCAL" ]; then
+      if [ "$MODE" != "owed" ]; then
+        echo "  $NAME no longer carries $LOCAL" >&2; exit 1
+      fi
+    elif cmp -s "$CANON" "$ROOT/$LOCAL"; then
+      continue   # already agrees
+    fi
 
     case "$MODE" in
       fork) continue ;;
@@ -110,6 +120,7 @@ for TSV in consumers/*.tsv; do
     esac
 
     if [ "$DRY" = 0 ]; then
+      mkdir -p "$(dirname "$ROOT/$LOCAL")"
       cp "$CANON" "$ROOT/$LOCAL"
       # Prove the copy landed rather than trusting cp's exit status.
       cmp -s "$CANON" "$ROOT/$LOCAL" || { echo "  the copy of $LOCAL did not take" >&2; exit 1; }

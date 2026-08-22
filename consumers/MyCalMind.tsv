@@ -113,7 +113,8 @@ fork	canon/app/src/components/SyncDot.tsx	app/src/components/SyncDot.tsx	deliber
 fork	canon/packages/core/package.json	packages/core/package.json	version field only (each edition numbers its own core)
 owed	canon/app/src/components/CalendarPick.tsx	app/src/components/CalendarPick.tsx	lags: missing the calbox testID
 owed	canon/app/src/components/IngredientBadge.tsx	app/src/components/IngredientBadge.tsx	lags: carries the older 08-18 emoji-icon treatment
-owed	canon/app/src/screens/Notes.tsx	app/src/screens/Notes.tsx	lags the RichText fix — BLOCKED: MyCalMind has no components/RichText.tsx; copy that first or reconcile by hand
+owed	canon/app/src/components/RichText.tsx	app/src/components/RichText.tsx	NEW here: Notes.tsx needs it; imports only react-native and core richLines
+owed	canon/app/src/screens/Notes.tsx	app/src/screens/Notes.tsx	lags the RichText fix — asterisks printed that had just been parsed away; lands with RichText.tsx
 owed	canon/packages/core/src/day.ts	packages/core/src/day.ts	lags CalMind 2026-08-20: DayReminder.late + dayHeading
 owed	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	same four-export superset owed as CalMind
 owed	canon/packages/core/src/types.ts	packages/core/src/types.ts	lags CalMind 2026-08-21: MeetAvail
