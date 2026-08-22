@@ -63,7 +63,7 @@ for TSV in consumers/*.tsv; do
     exit 1
   fi
 
-  n=0
+  n=0; behind=0
   while IFS="$(printf '\t')" read -r MODE CANON LOCAL NOTE || [ -n "$MODE" ]; do
     case "$MODE" in ''|'#'*) continue ;; esac
     [ -f "$CANON" ] || { echo "  canon file missing: $CANON" >&2; exit 1; }
@@ -78,11 +78,11 @@ for TSV in consumers/*.tsv; do
         case "$NOTE" in
           *BLOCKED*)
             printf '  \033[33m○\033[0m owed, BLOCKED: %s — %s\n' "$LOCAL" "$NOTE"
-            BLOCKED=$((BLOCKED + 1)); continue ;;
+            BLOCKED=$((BLOCKED + 1)); behind=$((behind + 1)); continue ;;
         esac
         if [ "$COPYDOWN" = 0 ]; then
           printf '  \033[33m○\033[0m owed (--copy-down to land it): %s\n' "$LOCAL"
-          continue
+          behind=$((behind + 1)); continue
         fi
         printf '  copy   %s — %s\n' "$LOCAL" "$NOTE" ;;
       *) echo "  unknown mode '$MODE' for $LOCAL" >&2; exit 1 ;;
@@ -99,6 +99,12 @@ for TSV in consumers/*.tsv; do
   if [ "$n" -gt 0 ]; then
     case " $TOUCHED " in *" $NAME "*) ;; *) TOUCHED="$TOUCHED $NAME" ;; esac
     printf '  %d file(s) %s\n' "$n" "$([ "$DRY" = 1 ] && echo 'would be written' || echo written)"
+  elif [ "$behind" -gt 0 ]; then
+    # NOT "already carries canon". It carries canon everywhere the manifest
+    # calls for it today, and is knowingly behind on $behind file(s) — saying
+    # the first and leaving out the second read as a contradiction of the
+    # lines directly above it.
+    printf '  \033[32m✓\033[0m no drift; %d owed file(s) left as they are\n' "$behind"
   else
     printf '  \033[32m✓\033[0m already carries canon\n'
   fi
@@ -140,7 +146,9 @@ else
 fi
 [ "$BLOCKED" -eq 0 ] || echo "$BLOCKED owed row(s) BLOCKED — see the notes above; they need a person"
 
-# The last line is read by bin/deploy.sh, which cascades to the consumers only
-# when core actually changed something under them. Machine-readable on purpose:
-# grepping prose is how a cascade ends up firing on a run that wrote nothing.
-echo "CORE_WROTE=$WROTE"
+# A marker for bin/deploy.sh, which cascades to the consumers only when core
+# actually changed something under them. Machine-readable on purpose — grepping
+# prose is how a cascade ends up firing on a run that wrote nothing — and
+# printed ONLY when asked for, so a person running this directly does not get a
+# line of protocol at the end of their output.
+[ -z "${CORE_MARKER:-}" ] || echo "CORE_WROTE=$WROTE"
