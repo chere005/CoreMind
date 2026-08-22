@@ -1,0 +1,15 @@
+{
+  "name": "coremind",
+  "private": true,
+  "workspaces": [
+    "canon/packages/*"
+  ],
+  "scripts": {
+    "test": "cd canon/packages/core && TZ=America/Chicago npx vitest run --config ../../../vitest.canon.config.mts",
+    "typecheck": "npx tsc --noEmit -p canon/packages/core",
+    "check": "sh bin/check-drift.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0"
+  }
+}

@@ -1,0 +1,138 @@
+# fork: deliberate divergence, reported not failed. owed: verified lag, a copy-down owed.
+# mode	canon	local	note — see README.md. exact: byte-identical, the check fails on drift.
+exact	canon/app/index.ts	app/index.ts	
+exact	canon/app/src/components/BalancedRow.tsx	app/src/components/BalancedRow.tsx	
+exact	canon/app/src/components/CalendarPick.tsx	app/src/components/CalendarPick.tsx	
+exact	canon/app/src/components/Chevron.tsx	app/src/components/Chevron.tsx	
+exact	canon/app/src/components/DayPick.tsx	app/src/components/DayPick.tsx	
+exact	canon/app/src/components/Dropdown.tsx	app/src/components/Dropdown.tsx	
+exact	canon/app/src/components/EditExit.tsx	app/src/components/EditExit.tsx	
+exact	canon/app/src/components/FolderManager.tsx	app/src/components/FolderManager.tsx	
+exact	canon/app/src/components/HabitEditor.tsx	app/src/components/HabitEditor.tsx	
+exact	canon/app/src/components/HabitSectionManager.tsx	app/src/components/HabitSectionManager.tsx	
+exact	canon/app/src/components/IngredientBadge.tsx	app/src/components/IngredientBadge.tsx	
+exact	canon/app/src/components/ItemModal.tsx	app/src/components/ItemModal.tsx	
+exact	canon/app/src/components/PieDot.tsx	app/src/components/PieDot.tsx	
+exact	canon/app/src/components/RichText.tsx	app/src/components/RichText.tsx	
+exact	canon/app/src/components/SectionPick.tsx	app/src/components/SectionPick.tsx	
+exact	canon/app/src/components/ShareModal.tsx	app/src/components/ShareModal.tsx	
+exact	canon/app/src/components/SwatchTray.tsx	app/src/components/SwatchTray.tsx	
+exact	canon/app/src/components/SyncDot.tsx	app/src/components/SyncDot.tsx	
+exact	canon/app/src/components/Toast.tsx	app/src/components/Toast.tsx	
+exact	canon/app/src/components/ToastHost.tsx	app/src/components/ToastHost.tsx	
+exact	canon/app/src/components/ToastHost.web.tsx	app/src/components/ToastHost.web.tsx	
+exact	canon/app/src/components/rowdrag.ts	app/src/components/rowdrag.ts	
+exact	canon/app/src/components/sectiondrag.ts	app/src/components/sectiondrag.ts	
+exact	canon/app/src/components/swiperow.ts	app/src/components/swiperow.ts	
+exact	canon/app/src/components/tickgrace.ts	app/src/components/tickgrace.ts	
+exact	canon/app/src/passkey.ts	app/src/passkey.ts	
+exact	canon/app/src/savefile.ts	app/src/savefile.ts	
+exact	canon/app/src/savefile.web.ts	app/src/savefile.web.ts	
+exact	canon/app/src/screens/Settings.tsx	app/src/screens/Settings.tsx	
+exact	canon/app/src/theme.ts	app/src/theme.ts	
+exact	canon/app/src/ui.tsx	app/src/ui.tsx	
+exact	canon/app/src/update.ts	app/src/update.ts	
+exact	canon/app/src/useClock24.ts	app/src/useClock24.ts	
+exact	canon/app/tsconfig.json	app/tsconfig.json	
+exact	canon/desktop/src-tauri/build.rs	desktop/src-tauri/build.rs	
+exact	canon/packages/core/src/b64u.ts	packages/core/src/b64u.ts	
+exact	canon/packages/core/src/backup.ts	packages/core/src/backup.ts	
+exact	canon/packages/core/src/calsub.ts	packages/core/src/calsub.ts	
+exact	canon/packages/core/src/day.ts	packages/core/src/day.ts	
+exact	canon/packages/core/src/habit.ts	packages/core/src/habit.ts	
+exact	canon/packages/core/src/ical.ts	packages/core/src/ical.ts	
+exact	canon/packages/core/src/layout.ts	packages/core/src/layout.ts	
+exact	canon/packages/core/src/manage.ts	packages/core/src/manage.ts	
+exact	canon/packages/core/src/markdown.ts	packages/core/src/markdown.ts	
+exact	canon/packages/core/src/order.ts	packages/core/src/order.ts	
+exact	canon/packages/core/src/parse.ts	packages/core/src/parse.ts	
+exact	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	
+exact	canon/packages/core/src/repeats.ts	packages/core/src/repeats.ts	
+exact	canon/packages/core/src/richtext.ts	packages/core/src/richtext.ts	
+exact	canon/packages/core/src/rrule.ts	packages/core/src/rrule.ts	
+exact	canon/packages/core/src/rules.ts	packages/core/src/rules.ts	
+exact	canon/packages/core/src/search.ts	packages/core/src/search.ts	
+exact	canon/packages/core/src/sort.ts	packages/core/src/sort.ts	
+exact	canon/packages/core/src/sync.ts	packages/core/src/sync.ts	
+exact	canon/packages/core/src/undo.ts	packages/core/src/undo.ts	
+exact	canon/packages/core/src/update.ts	packages/core/src/update.ts	
+exact	canon/packages/core/src/watch.ts	packages/core/src/watch.ts	
+exact	canon/packages/core/test/b64u.test.ts	packages/core/test/b64u.test.ts	
+exact	canon/packages/core/test/b64ufuzz.test.ts	packages/core/test/b64ufuzz.test.ts	
+exact	canon/packages/core/test/backup.test.ts	packages/core/test/backup.test.ts	
+exact	canon/packages/core/test/calsub.test.ts	packages/core/test/calsub.test.ts	
+exact	canon/packages/core/test/clockdrift.test.ts	packages/core/test/clockdrift.test.ts	
+exact	canon/packages/core/test/copyline.test.ts	packages/core/test/copyline.test.ts	
+exact	canon/packages/core/test/day.test.ts	packages/core/test/day.test.ts	
+exact	canon/packages/core/test/dayheading.test.ts	packages/core/test/dayheading.test.ts	
+exact	canon/packages/core/test/dupord.test.ts	packages/core/test/dupord.test.ts	
+exact	canon/packages/core/test/endtime.test.ts	packages/core/test/endtime.test.ts	
+exact	canon/packages/core/test/entities.test.ts	packages/core/test/entities.test.ts	
+exact	canon/packages/core/test/escape.test.ts	packages/core/test/escape.test.ts	
+exact	canon/packages/core/test/eventpaste.test.ts	packages/core/test/eventpaste.test.ts	
+exact	canon/packages/core/test/fixtures/bbcgoodfood-scones.html	packages/core/test/fixtures/bbcgoodfood-scones.html	
+exact	canon/packages/core/test/gridfuzz.test.ts	packages/core/test/gridfuzz.test.ts	
+exact	canon/packages/core/test/habit.test.ts	packages/core/test/habit.test.ts	
+exact	canon/packages/core/test/ical.test.ts	packages/core/test/ical.test.ts	
+exact	canon/packages/core/test/layout.test.ts	packages/core/test/layout.test.ts	
+exact	canon/packages/core/test/layoutfit.test.ts	packages/core/test/layoutfit.test.ts	
+exact	canon/packages/core/test/manage.test.ts	packages/core/test/manage.test.ts	
+exact	canon/packages/core/test/manageguards.test.ts	packages/core/test/manageguards.test.ts	
+exact	canon/packages/core/test/markdown.test.ts	packages/core/test/markdown.test.ts	
+exact	canon/packages/core/test/meetreq.test.ts	packages/core/test/meetreq.test.ts	
+exact	canon/packages/core/test/nonadvancing.test.ts	packages/core/test/nonadvancing.test.ts	
+exact	canon/packages/core/test/normidem.test.ts	packages/core/test/normidem.test.ts	
+exact	canon/packages/core/test/ordequiv.test.ts	packages/core/test/ordequiv.test.ts	
+exact	canon/packages/core/test/order.test.ts	packages/core/test/order.test.ts	
+exact	canon/packages/core/test/ordfuzz.test.ts	packages/core/test/ordfuzz.test.ts	
+exact	canon/packages/core/test/parse.test.ts	packages/core/test/parse.test.ts	
+exact	canon/packages/core/test/realpage.test.ts	packages/core/test/realpage.test.ts	
+exact	canon/packages/core/test/recipe.test.ts	packages/core/test/recipe.test.ts	
+exact	canon/packages/core/test/richfuzz.test.ts	packages/core/test/richfuzz.test.ts	
+exact	canon/packages/core/test/richtext.test.ts	packages/core/test/richtext.test.ts	
+exact	canon/packages/core/test/rrule.test.ts	packages/core/test/rrule.test.ts	
+exact	canon/packages/core/test/rules.test.ts	packages/core/test/rules.test.ts	
+exact	canon/packages/core/test/scalefrac.test.ts	packages/core/test/scalefrac.test.ts	
+exact	canon/packages/core/test/search.test.ts	packages/core/test/search.test.ts	
+exact	canon/packages/core/test/shiftback.test.ts	packages/core/test/shiftback.test.ts	
+exact	canon/packages/core/test/spec.test.ts	packages/core/test/spec.test.ts	
+exact	canon/packages/core/test/sync.test.ts	packages/core/test/sync.test.ts	
+exact	canon/packages/core/test/syncloss.test.ts	packages/core/test/syncloss.test.ts	
+exact	canon/packages/core/test/timerange.test.ts	packages/core/test/timerange.test.ts	
+exact	canon/packages/core/test/tinsize.test.ts	packages/core/test/tinsize.test.ts	
+exact	canon/packages/core/test/twotabmerge.test.ts	packages/core/test/twotabmerge.test.ts	
+exact	canon/packages/core/test/undo.test.ts	packages/core/test/undo.test.ts	
+exact	canon/packages/core/test/undoconvert.test.ts	packages/core/test/undoconvert.test.ts	
+exact	canon/packages/core/test/update.test.ts	packages/core/test/update.test.ts	
+exact	canon/packages/core/test/visionchain.test.ts	packages/core/test/visionchain.test.ts	
+exact	canon/packages/core/test/watch.test.ts	packages/core/test/watch.test.ts	
+exact	canon/packages/core/test/watchfeed.test.ts	packages/core/test/watchfeed.test.ts	
+exact	canon/packages/core/tsconfig.json	packages/core/tsconfig.json	
+exact	canon/spec/clock.json	spec/clock.json	
+exact	canon/spec/parse.json	spec/parse.json	
+exact	canon/spec/repeats.json	spec/repeats.json	
+exact	canon/spec/sort.json	spec/sort.json	
+exact	canon/tsconfig.base.json	tsconfig.base.json	
+fork	canon/app/src/Logo.tsx	app/src/Logo.tsx	its own mark
+fork	canon/app/src/api.ts	app/src/api.ts	deliberate: SYNC_SPACE constant AND the space field on every sync request
+fork	canon/app/src/components/FolderPick.tsx	app/src/components/FolderPick.tsx	deliberate: !payload.shopping filter
+fork	canon/app/src/components/KindIcons.tsx	app/src/components/KindIcons.tsx	deliberate: adds BasketIcon
+fork	canon/app/src/components/ocr.ts	app/src/components/ocr.ts	app-name string
+fork	canon/app/src/config.ts	app/src/config.ts	deliberate: cross-path API derivation (/calmind/api on the same origin)
+fork	canon/app/src/screens/Login.tsx	app/src/screens/Login.tsx	branding strings
+fork	canon/app/src/screens/RecipeEditor.tsx	app/src/screens/RecipeEditor.tsx	two-line t→cur rename
+fork	canon/desktop/package.json	desktop/package.json	differs from canon — deliberate per the analysis
+fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	differs from canon — deliberate per the analysis
+fork	canon/desktop/src-tauri/src/main.rs	desktop/src-tauri/src/main.rs	differs from canon — deliberate per the analysis
+fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	differs from canon — deliberate per the analysis
+fork	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	differs from canon — deliberate per the analysis
+fork	canon/packages/core/package.json	packages/core/package.json	differs from canon — deliberate per the analysis
+fork	canon/packages/core/src/meetreq.ts	packages/core/src/meetreq.ts	pre-MeetAvail stub kept for record lockstep
+fork	canon/packages/core/src/normalize.ts	packages/core/src/normalize.ts	deliberate: seed-folder table (gold Shopping, no calendar/habit starters), folder() shopping param, appFolders filter
+fork	canon/packages/core/src/types.ts	packages/core/src/types.ts	deliberate: Folder.shopping flag; ALSO lags MeetAvail — reconcile by hand
+fork	canon/packages/core/test/batchlimit.test.ts	packages/core/test/batchlimit.test.ts	sibling-checkout path + CALMIND_REPO + visible skip (needed standalone)
+fork	canon/packages/core/test/normalize.test.ts	packages/core/test/normalize.test.ts	follows normalize.ts fork
+fork	canon/packages/core/test/protocolids.test.ts	packages/core/test/protocolids.test.ts	sibling-checkout path + CALMIND_REPO + visible skip (needed standalone); CalMind reads its own server in-repo
+fork	canon/tools/patch-web-html.mjs	tools/patch-web-html.mjs	dist path + app-name strings
+fork	canon/tools/source-digest.mjs	tools/source-digest.mjs	SOURCES path list
+fork	canon/tools/sw.js	tools/sw.js	cache-prefix lines
