@@ -53,6 +53,56 @@ npm run typecheck
 npm run check     # every consumer with a checkout, against canon
 ```
 
+## Deploying
+
+CoreMind ships to no server and no store, so **deploying core means putting
+the canonical bytes where the consumers carry them** — and then proving the
+apps still pass with them.
+
+```sh
+npm run deploy:core                  # propagate canon; fix drift
+npm run deploy:core -- --copy-down   # …and land the `owed` lags too
+npm run deploy -- all                # core, then every app, in order
+npm run deploy -- CalMind            # CalMind — and ChefMind, which needs it
+npm run deploy -- --only ChefMind    # that one alone, cascade suppressed
+npm run deploy -- all --plan         # resolve the order and stop
+```
+
+### The dependency graph, and why it cascades
+
+```
+core ──▶ CalMind, ChefMind, MyCalMind, AcctMind
+CalMind ──▶ ChefMind
+```
+
+Both edges are real, not tidy:
+
+- **Canon IS the apps' source.** Shipping core without shipping them leaves
+  the canonical bytes live nowhere, so a core deploy drags the consumers
+  behind it — *only when it actually wrote something*. A propagation that
+  changed nothing redeploys nothing.
+- **ChefMind has no server.** It syncs through CalMind's API in the `chef`
+  space, and its own deploy REFUSES to ship unless the live API reports that
+  space. CalMind must land first. That ordering used to live in somebody's
+  memory; it lives in `bin/deploy.sh` now, which is the whole point.
+
+`AcctMind` is independent and `MyCalMind` talks to no server at all —
+MyCalMind installs onto a connected iPhone, so it never rides an unattended
+cascade: name it, or pass `--with-devices` (which `all` implies).
+
+### Releasing the whole suite
+
+```sh
+npm run dtp -- all       # deploy, tag, push — every repo, core first
+npm run tdtp -- all      # the same, with the full test run in each lane
+npm run dtp -- CalMind   # CalMind and its downstream
+```
+
+Each repo's own `tools/dtp.sh` does the work; this adds the order and a
+**pre-flight that checks every repo in the plan before the first one ships** —
+a run that stopped at the third repo because it was on a branch would already
+have tagged and pushed two releases, and those do not come back.
+
 ## How a shared fix flows
 
 1. The fix lands in **CalMind** (the origin) — or, where another repo's copy

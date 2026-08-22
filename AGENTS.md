@@ -25,6 +25,17 @@ and the doctrine; this file is how to work in here.
 - **Run all three before committing**: `npm test` (the canon suite, 634
   tests — proof the canonical set coheres), `npm run typecheck`, and
   `npm run check` against the sibling checkouts.
+- **The deploy graph lives in one place.** `bin/deploy.sh` and `bin/dtp.sh`
+  each carry the same `downstream_of()` and the same `ORDER`, and both are
+  the reason ChefMind cannot ship before the API it checks. Add an edge to
+  one and add it to the other in the same commit — two graphs that disagree
+  is worse than the memory this replaced. A deploy CASCADES by default;
+  `--only` is the way to ship one thing.
+- **`deploy-core.sh` writes over app source and commits nothing.** It refuses
+  a dirty consumer (two changes in one diff has no way back), never touches a
+  `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
+  by name, and runs each touched app's own typecheck and core suite before
+  claiming the copy landed.
 - **`main` is the branch.** Stage explicit paths — never `git add -A`.
 
 ## Traps

@@ -1,0 +1,146 @@
+#!/bin/sh
+# Deploy CORE — that is, propagate canon into the consumer repos.
+#
+# CoreMind ships to no server and no store. Its platforms ARE the four app
+# repos, so "deploying core" means putting the canonical bytes where the
+# consumers carry them, and then proving the apps still pass with them.
+#
+#   sh bin/deploy-core.sh                  fix DRIFT in every consumer
+#   sh bin/deploy-core.sh --only CalMind   just that one
+#   sh bin/deploy-core.sh --copy-down      …and land the `owed` lags too
+#   sh bin/deploy-core.sh --dry-run        say what would be written
+#
+# WHAT IT WILL AND WILL NOT WRITE, because a tool that copies files over an
+# app's source has to be exact about its own reach:
+#   exact  the consumer is supposed to be byte-identical. If it is not, that
+#          is drift, and canon wins. Written by default.
+#   owed   a verified lag: canon is ahead and the copy-down is owed. NOT
+#          written by default — landing one changes what an app does, so it
+#          is opt-in (--copy-down) and reported either way. A row whose note
+#          says BLOCKED is refused even then, by name.
+#   fork   a deliberate divergence. Never written, under any flag.
+#
+# Every repo it touches must be CLEAN first — this overwrites tracked source,
+# and doing that on top of someone's uncommitted work would mix two changes
+# into one diff with no way back. It stages nothing and commits nothing: the
+# copy is left in the working tree for a person to read.
+set -e
+cd "$(dirname "$0")/.."
+PARENT="${MIND_DIR:-$(cd .. && pwd)}"
+
+DRY=0; COPYDOWN=0; ONLY=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run)   DRY=1 ;;
+    --copy-down) COPYDOWN=1 ;;
+    --only)      ONLY="$2"; shift ;;
+    *) echo "unknown flag: $1" >&2; exit 1 ;;
+  esac
+  shift
+done
+
+if [ -n "$ONLY" ] && [ ! -f "consumers/$ONLY.tsv" ]; then
+  echo "no manifest for '$ONLY' — consumers/ holds: $(ls consumers/*.tsv | xargs -n1 basename | sed 's/\.tsv$//' | tr '\n' ' ')" >&2
+  exit 1
+fi
+
+WROTE=0; TOUCHED=""; BLOCKED=0; CHECKED=0
+for TSV in consumers/*.tsv; do
+  NAME=$(basename "$TSV" .tsv)
+  [ -z "$ONLY" ] || [ "$ONLY" = "$NAME" ] || continue
+  ROOT="$PARENT/$NAME"
+  if [ ! -d "$ROOT" ]; then
+    echo "== $NAME — no checkout at $ROOT, skipped"
+    continue
+  fi
+  CHECKED=$((CHECKED + 1))
+  echo "== $NAME ($ROOT)"
+
+  # Clean tree, or nothing. Checked per repo, before that repo is written to.
+  if [ "$DRY" = 0 ] && [ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no)" ]; then
+    echo "  refusing: $NAME has uncommitted tracked changes — this writes over source" >&2
+    git -C "$ROOT" status --porcelain --untracked-files=no | sed 's/^/    /' >&2
+    exit 1
+  fi
+
+  n=0
+  while IFS="$(printf '\t')" read -r MODE CANON LOCAL NOTE || [ -n "$MODE" ]; do
+    case "$MODE" in ''|'#'*) continue ;; esac
+    [ -f "$CANON" ] || { echo "  canon file missing: $CANON" >&2; exit 1; }
+    [ -f "$ROOT/$LOCAL" ] || { echo "  $NAME no longer carries $LOCAL" >&2; exit 1; }
+    cmp -s "$CANON" "$ROOT/$LOCAL" && continue   # already agrees
+
+    case "$MODE" in
+      fork) continue ;;
+      exact)
+        printf '  drift  %s\n' "$LOCAL" ;;
+      owed)
+        case "$NOTE" in
+          *BLOCKED*)
+            printf '  \033[33m○\033[0m owed, BLOCKED: %s — %s\n' "$LOCAL" "$NOTE"
+            BLOCKED=$((BLOCKED + 1)); continue ;;
+        esac
+        if [ "$COPYDOWN" = 0 ]; then
+          printf '  \033[33m○\033[0m owed (--copy-down to land it): %s\n' "$LOCAL"
+          continue
+        fi
+        printf '  copy   %s — %s\n' "$LOCAL" "$NOTE" ;;
+      *) echo "  unknown mode '$MODE' for $LOCAL" >&2; exit 1 ;;
+    esac
+
+    if [ "$DRY" = 0 ]; then
+      cp "$CANON" "$ROOT/$LOCAL"
+      # Prove the copy landed rather than trusting cp's exit status.
+      cmp -s "$CANON" "$ROOT/$LOCAL" || { echo "  the copy of $LOCAL did not take" >&2; exit 1; }
+    fi
+    n=$((n + 1)); WROTE=$((WROTE + 1))
+  done < "$TSV"
+
+  if [ "$n" -gt 0 ]; then
+    case " $TOUCHED " in *" $NAME "*) ;; *) TOUCHED="$TOUCHED $NAME" ;; esac
+    printf '  %d file(s) %s\n' "$n" "$([ "$DRY" = 1 ] && echo 'would be written' || echo written)"
+  else
+    printf '  \033[32m✓\033[0m already carries canon\n'
+  fi
+done
+
+if [ "$CHECKED" -eq 0 ]; then
+  echo "no consumer checkout was found under $PARENT — nothing was done" >&2
+  exit 1
+fi
+
+# ------------------------------------------------------------------ the proof
+# A copy that compiles and passes is a copy that landed. Running each touched
+# app's OWN suite is the only thing that can say so — canon's suite passing
+# here says nothing about an app whose screens import these modules.
+if [ "$DRY" = 0 ] && [ -n "$TOUCHED" ]; then
+  for NAME in $TOUCHED; do
+    ROOT="$PARENT/$NAME"
+    echo ""
+    echo "==> proving $NAME with its own suite"
+    if [ -d "$ROOT/node_modules" ]; then
+      ( cd "$ROOT" && npm run -s typecheck ) \
+        || { echo "$NAME's typecheck FAILED with canon in place — look before committing" >&2; exit 1; }
+      ( cd "$ROOT" && npm run -s test:core -- --reporter=dot >/dev/null 2>&1 ) \
+        || { echo "$NAME's core suite FAILED with canon in place — look before committing" >&2; exit 1; }
+      echo "    typecheck and core suite green"
+    else
+      echo "    SKIPPED: $NAME has no node_modules — run npm install there and re-check" >&2
+    fi
+  done
+fi
+
+echo ""
+echo "────────────────────────────────"
+if [ "$DRY" = 1 ]; then
+  echo "dry run: $WROTE file(s) would be written${TOUCHED:+ in$TOUCHED}"
+else
+  echo "$WROTE file(s) written${TOUCHED:+ in$TOUCHED}"
+  [ "$WROTE" -eq 0 ] || echo "left uncommitted on purpose — read the diff, then commit it in each repo"
+fi
+[ "$BLOCKED" -eq 0 ] || echo "$BLOCKED owed row(s) BLOCKED — see the notes above; they need a person"
+
+# The last line is read by bin/deploy.sh, which cascades to the consumers only
+# when core actually changed something under them. Machine-readable on purpose:
+# grepping prose is how a cascade ends up firing on a run that wrote nothing.
+echo "CORE_WROTE=$WROTE"

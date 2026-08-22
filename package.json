@@ -7,9 +7,14 @@
   "scripts": {
     "test": "cd canon/packages/core && TZ=America/Chicago npx vitest run --config ../../../vitest.canon.config.mts",
     "typecheck": "npx tsc --noEmit -p canon/packages/core",
-    "check": "sh bin/check-drift.sh"
+    "check": "sh bin/check-drift.sh",
+    "deploy": "sh bin/deploy.sh",
+    "deploy:core": "sh bin/deploy-core.sh",
+    "dtp": "sh bin/dtp.sh",
+    "tdtp": "sh bin/dtp.sh --full"
   },
   "devDependencies": {
     "@types/node": "^26.2.0"
-  }
+  },
+  "version": "1.0.0"
 }

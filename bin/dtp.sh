@@ -1,0 +1,149 @@
+#!/bin/sh
+# dtp the suite — deploy, tag, push, across every repo, in dependency order.
+#
+#   sh bin/dtp.sh all                every repo, core first
+#   sh bin/dtp.sh CalMind            CalMind — and ChefMind, which depends on it
+#   sh bin/dtp.sh --only AcctMind    that one alone
+#   sh bin/dtp.sh all --plan         resolve the order and stop
+#   sh bin/dtp.sh all --full         tdtp: the full test run in each lane
+#
+# Each repo's OWN lane does the work — tools/dtp.sh in the four apps, which
+# already bump the minor version, refuse a dirty tree or a non-main branch,
+# never tag around a failed deploy, and push atomically. This adds exactly two
+# things: the ORDER (bin/deploy.sh's graph, same edges, same reasons) and the
+# fact that stopping at a failure leaves everything after it unshipped rather
+# than half-shipped in an order nobody chose.
+#
+# CORE's lane is different, because CoreMind ships to no server: it propagates
+# canon into the consumers, proves the drift check is clean, then tags and
+# pushes itself. A consumer left carrying non-canon bytes stops the run — the
+# apps below it would otherwise be tagged as "the canon release" while not
+# being it.
+set -e
+cd "$(dirname "$0")/.."
+PARENT="${MIND_DIR:-$(cd .. && pwd)}"
+ORDER="core CalMind ChefMind AcctMind MyCalMind"
+
+downstream_of() {
+  case "$1" in
+    core)    echo "CalMind ChefMind AcctMind MyCalMind" ;;
+    CalMind) echo "ChefMind" ;;
+    *)       echo "" ;;
+  esac
+}
+
+FULL=0; ONLY=0; PLANONLY=0; DEVICES=0; WANT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --full)         FULL=1 ;;
+    --only)         ONLY=1 ;;
+    --plan)         PLANONLY=1 ;;
+    --with-devices) DEVICES=1 ;;
+    -*)             echo "unknown flag: $1" >&2; exit 1 ;;
+    all)            WANT="$ORDER"; DEVICES=1 ;;
+    *)              WANT="$WANT $1" ;;
+  esac
+  shift
+done
+[ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind" >&2; exit 1; }
+for T in $WANT; do
+  case " $ORDER " in *" $T "*) ;; *) echo "unknown target '$T' — one of: $ORDER" >&2; exit 1 ;; esac
+done
+
+SET="$WANT"
+if [ "$ONLY" = 0 ]; then
+  for _ in 1 2 3; do
+    for T in $SET; do
+      for D in $(downstream_of "$T"); do
+        case " $SET " in *" $D "*) ;; *) SET="$SET $D" ;; esac
+      done
+    done
+  done
+fi
+
+PLAN=""
+for T in $ORDER; do
+  case " $SET " in *" $T "*) ;; *) continue ;; esac
+  if [ "$T" = "MyCalMind" ] && [ "$DEVICES" = 0 ]; then
+    case " $WANT " in *" MyCalMind "*) ;; *) continue ;; esac
+  fi
+  PLAN="$PLAN $T"
+done
+[ -n "$PLAN" ] || { echo "nothing to do" >&2; exit 1; }
+
+LANE=dtp; [ "$FULL" = 0 ] || LANE=tdtp
+echo "==> $LANE plan:$PLAN"
+[ "$ONLY" = 1 ] && echo "    (--only: downstream cascade suppressed)"
+case " $PLAN " in
+  *" MyCalMind "*) echo "    (MyCalMind's deploy installs onto a connected iPhone)" ;;
+esac
+
+# ------------------------------------------------------- look before shipping
+# Every repo in the plan is checked BEFORE the first one ships. A run that
+# stops on repo three because repo three was on a branch has already tagged
+# and pushed two releases, and those cannot be taken back.
+echo ""
+echo "==> pre-flight"
+for T in $PLAN; do
+  case "$T" in core) R="$PARENT/CoreMind" ;; *) R="$PARENT/$T" ;; esac
+  [ -d "$R" ] || { echo "  no checkout at $R" >&2; exit 1; }
+  B=$(git -C "$R" rev-parse --abbrev-ref HEAD)
+  [ "$B" = "main" ] || { echo "  $T is on branch '$B', not main" >&2; exit 1; }
+  if [ -n "$(git -C "$R" status --porcelain --untracked-files=no)" ]; then
+    echo "  $T has uncommitted tracked changes:" >&2
+    git -C "$R" status --porcelain --untracked-files=no | sed 's/^/    /' >&2
+    exit 1
+  fi
+  printf '  \033[32m✓\033[0m %-10s main, clean\n' "$T"
+done
+[ "$PLANONLY" = 0 ] || exit 0
+
+for T in $PLAN; do
+  echo ""
+  echo "──────────────────────────────── $LANE $T"
+  case "$T" in
+    core)
+      # Propagate, then hold the whole suite to it.
+      sh bin/deploy-core.sh | grep -v '^CORE_WROTE='
+      if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+        echo "CoreMind itself is dirty after propagating — look" >&2; exit 1
+      fi
+      for C in CalMind ChefMind AcctMind MyCalMind; do
+        [ -d "$PARENT/$C" ] || continue
+        if [ -n "$(git -C "$PARENT/$C" status --porcelain --untracked-files=no)" ]; then
+          echo "" >&2
+          echo "$C changed when canon was propagated — it was carrying drift." >&2
+          echo "Read and commit that in $C first; a release tagged now would" >&2
+          echo "name a tree that had not been reviewed." >&2
+          git -C "$PARENT/$C" status --porcelain --untracked-files=no | sed 's/^/  /' >&2
+          exit 1
+        fi
+      done
+      sh bin/check-drift.sh
+      VER=$(node -p "require('./package.json').version")
+      if git rev-parse -q --verify "refs/tags/v$VER" >/dev/null; then
+        NEW=$(echo "$VER" | awk -F. '{printf "%d.%d.0", $1, $2+1}')
+        perl -i -pe "s|\"version\": \"\Q$VER\E\"|\"version\": \"$NEW\"|" package.json
+        grep -q "\"version\": \"$NEW\"" package.json \
+          || { echo "guard: package.json does not carry $NEW" >&2; exit 1; }
+        git add package.json && git commit -q -m "CoreMind $NEW"
+        VER="$NEW"
+      fi
+      git tag -a "v$VER" -m "CoreMind $VER"
+      if ! git push --atomic --follow-tags origin main; then
+        git tag -d "v$VER" >/dev/null
+        echo "CoreMind's push was rejected — nothing tagged. Pull and re-run." >&2
+        exit 1
+      fi
+      echo "==> CoreMind v$VER tagged and pushed"
+      ;;
+    *)
+      R="$PARENT/$T"
+      if [ "$FULL" = 1 ]; then ( cd "$R" && sh tools/tdtp.sh ); else ( cd "$R" && sh tools/dtp.sh ); fi
+      ;;
+  esac
+done
+
+echo ""
+echo "────────────────────────────────"
+echo "$LANE complete:$PLAN"
