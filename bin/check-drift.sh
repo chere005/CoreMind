@@ -21,7 +21,16 @@ set -e
 cd "$(dirname "$0")/.."
 PARENT="${MIND_DIR:-$(cd .. && pwd)}"
 
-FAIL=0; DRIFT=0; OWED=0
+FAIL=0; DRIFT=0; OWED=0; CHECKED=0
+
+# A named consumer that matches no manifest is a typo, and a typo that checks
+# nothing while exiting 0 is the shape of check this whole repo exists to
+# refuse. Resolved BEFORE any work, so the message names the argument.
+for WANT in "$@"; do
+  [ -f "consumers/$WANT.tsv" ] \
+    || { echo "no manifest for '$WANT' — consumers/ holds: $(ls consumers/*.tsv | xargs -n1 basename | sed 's/\.tsv$//' | tr '\n' ' ')" >&2; exit 1; }
+done
+
 for TSV in consumers/*.tsv; do
   NAME=$(basename "$TSV" .tsv)
   if [ $# -gt 0 ]; then
@@ -34,7 +43,7 @@ for TSV in consumers/*.tsv; do
   fi
   echo "== $NAME ($ROOT)"
   n_exact=0
-  while IFS="$(printf '\t')" read -r MODE CANON LOCAL NOTE; do
+  while IFS="$(printf '\t')" read -r MODE CANON LOCAL NOTE || [ -n "$MODE" ]; do
     case "$MODE" in ''|'#'*) continue ;; esac
     if [ ! -f "$CANON" ]; then
       printf '  \033[31m✗\033[0m canon file missing: %s\n' "$CANON"; FAIL=$((FAIL+1)); continue
@@ -63,11 +72,24 @@ for TSV in consumers/*.tsv; do
       *)
         printf '  \033[31m✗\033[0m unknown mode "%s" for %s\n' "$MODE" "$LOCAL"; FAIL=$((FAIL+1)) ;;
     esac
+    # `|| [ -n "$MODE" ]`: read returns NONZERO on a final line with no
+    # trailing newline, so the loop would exit without ever running the body
+    # for it — a manifest row silently unchecked, and the run still green.
   done < "$TSV"
   printf '  \033[32m✓\033[0m %d exact files match canon\n' "$n_exact"
+  CHECKED=$((CHECKED + 1))
 done
 
 echo
 echo "────────────────────────────────"
-echo "$DRIFT drifted, $OWED copies owed, $FAIL failures"
+# Nothing checked is not a pass. A wrong MIND_DIR (or a relative one — this
+# script cd's to the repo root first, so a relative path resolves from THERE,
+# not from where you typed it) skips every consumer, and the old ending
+# printed a clean summary and exited 0 having compared no files at all.
+if [ "$CHECKED" -eq 0 ]; then
+  echo "no consumer checkout was found under $PARENT — nothing was checked" >&2
+  echo "  (set MIND_DIR to the directory holding the sibling checkouts)" >&2
+  exit 1
+fi
+echo "$CHECKED consumer(s): $DRIFT drifted, $OWED copies owed, $FAIL failures"
 [ "$FAIL" -eq 0 ] || exit 1
