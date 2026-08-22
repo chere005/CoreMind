@@ -25,8 +25,9 @@ mirrors match.
 
 AcctMind is the deliberate outlier: its core shares zero byte-identical files
 with the lineage repos (its own `AGENTS.md` forbids importing from them). It
-participates here only through the desktop-shell files, and as the named
-source of ideas worth upstreaming — its `stable()` is CalMind's `canon()`
+participates here through the desktop-shell files and
+`tools/sync-lock-versions.mjs` — the one release-lane helper that came out
+identical in all four — and as the named source of ideas worth upstreaming — its `stable()` is CalMind's `canon()`
 with an extra fix, its `patch-web-html` stamps a build.json, its core
 tsconfig splits tests out with `"types": []`.
 

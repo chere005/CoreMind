@@ -107,6 +107,7 @@ exact	canon/spec/clock.json	spec/clock.json
 exact	canon/spec/parse.json	spec/parse.json	
 exact	canon/spec/repeats.json	spec/repeats.json	
 exact	canon/spec/sort.json	spec/sort.json	
+exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
 exact	canon/tsconfig.base.json	tsconfig.base.json	
 fork	canon/app/src/components/SyncDot.tsx	app/src/components/SyncDot.tsx	deliberate: offline/syncing branches deleted — there is no server
 fork	canon/packages/core/package.json	packages/core/package.json	version field only (each edition numbers its own core)

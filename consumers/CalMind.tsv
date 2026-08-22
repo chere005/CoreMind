@@ -142,5 +142,6 @@ exact	canon/spec/sort.json	spec/sort.json
 exact	canon/tools/patch-web-html.mjs	tools/patch-web-html.mjs	
 exact	canon/tools/source-digest.mjs	tools/source-digest.mjs	
 exact	canon/tools/sw.js	tools/sw.js	
+exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
 exact	canon/tsconfig.base.json	tsconfig.base.json	
 owed	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	ChefMind exported four helpers (qtyValue/qtyText/countWord/knownUnit) — a pure superset; adopting it restores lockstep
