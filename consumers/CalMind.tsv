@@ -49,11 +49,11 @@ exact	canon/app/src/update.ts	apps/app/src/update.ts
 exact	canon/app/src/useClock24.ts	apps/app/src/useClock24.ts	
 exact	canon/app/src/watch.ts	apps/app/src/watch.ts	
 exact	canon/app/tsconfig.json	apps/app/tsconfig.json	
-exact	canon/desktop/package.json	desktop/package.json	
-exact	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	
+fork	canon/desktop/package.json	desktop/package.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
+fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 exact	canon/desktop/src-tauri/build.rs	desktop/src-tauri/build.rs	
 exact	canon/desktop/src-tauri/src/main.rs	desktop/src-tauri/src/main.rs	
-exact	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	
+fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 exact	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	
 exact	canon/packages/core/package.json	packages/core/package.json	
 exact	canon/packages/core/src/b64u.ts	packages/core/src/b64u.ts	

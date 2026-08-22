@@ -122,19 +122,37 @@ repo_at() {
 DRYFLAG=""
 [ "$DRY" = 1 ] && DRYFLAG="--dry-run"
 
-CORE_CASCADE=1
+CORE_CASCADE=1; SHIPPED=""; SKIPPED=""
 for T in $PLAN; do
+  # THE GATE the header promises: "the cascade fires only when core actually
+  # wrote something". It was computed and printed and never consulted, so an
+  # in-sync `deploy.sh core` shipped three apps to production while saying
+  # nothing had propagated.
+  #
+  # It drops only what came in BY CASCADE. A target the operator named — and
+  # `all` names every one of them — ships on its own merit, which is what
+  # they asked for.
+  if [ "$CORE_CASCADE" = 0 ] && [ "$T" != "core" ]; then
+    case " $WANT " in
+      *" $T "*) ;;
+      *) echo "──────────────────────────────── $T"
+         echo "    skipped: here only because core is, and core propagated nothing"
+         echo ""
+         SKIPPED="$SKIPPED $T"
+         continue ;;
+    esac
+  fi
   echo "──────────────────────────────── $T"
   case "$T" in
     core)
-      OUT=$(sh bin/deploy-core.sh $DRYFLAG $COPYDOWN 2>&1) || { echo "$OUT" >&2; exit 1; }
+      OUT=$(CORE_MARKER=1 sh bin/deploy-core.sh $DRYFLAG $COPYDOWN 2>&1) || { echo "$OUT" >&2; exit 1; }
       echo "$OUT" | grep -v '^CORE_WROTE='
       WROTE=$(echo "$OUT" | sed -n 's/^CORE_WROTE=//p')
       # A propagation that wrote nothing leaves every consumer exactly as it
       # was, so the apps that follow are here on their own merit or not at all.
       if [ "${WROTE:-0}" = "0" ]; then
         CORE_CASCADE=0
-        echo "    core wrote nothing — the apps below are unchanged BY CORE"
+        echo "    core wrote nothing — anything here ONLY because core is, drops out"
       fi
       ;;
     CalMind)
@@ -156,13 +174,17 @@ for T in $PLAN; do
       ( cd "$R" && sh tools/deploy-device.sh $DRYFLAG )
       ;;
   esac
+  SHIPPED="$SHIPPED $T"
   echo ""
 done
 
 echo "────────────────────────────────"
+# What RAN, not what was planned. The old ending named the whole plan even
+# when the cascade gate had dropped most of it — a summary that reads as three
+# production deploys that did not happen.
 if [ "$DRY" = 1 ]; then
-  echo "dry run complete:$PLAN"
+  echo "dry run complete:${SHIPPED:- nothing}"
 else
-  echo "deployed:$PLAN"
+  echo "deployed:${SHIPPED:- nothing}"
 fi
-[ "$CORE_CASCADE" = 1 ] || echo "(core propagated nothing this run)"
+[ -z "$SKIPPED" ] || echo "skipped (core propagated nothing, and these were here only for it):$SKIPPED"

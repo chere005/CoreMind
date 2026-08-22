@@ -85,7 +85,11 @@ esac
 echo ""
 echo "==> pre-flight"
 for T in $PLAN; do
-  case "$T" in core) R="$PARENT/CoreMind" ;; *) R="$PARENT/$T" ;; esac
+  # `core` is THIS checkout — resolved from the script, not by guessing a
+  # directory called CoreMind next door. Those can be two different repos, and
+  # then the branch and clean checks pass on one while the tag lands on the
+  # other.
+  case "$T" in core) R="$(pwd)" ;; *) R="$PARENT/$T" ;; esac
   [ -d "$R" ] || { echo "  no checkout at $R" >&2; exit 1; }
   B=$(git -C "$R" rev-parse --abbrev-ref HEAD)
   [ "$B" = "main" ] || { echo "  $T is on branch '$B', not main" >&2; exit 1; }
@@ -94,8 +98,42 @@ for T in $PLAN; do
     git -C "$R" status --porcelain --untracked-files=no | sed 's/^/    /' >&2
     exit 1
   fi
-  printf '  \033[32m✓\033[0m %-10s main, clean\n' "$T"
+  git -C "$R" remote get-url origin >/dev/null 2>&1 \
+    || { echo "  $T has no origin remote — the lane ends in a push" >&2; exit 1; }
+  printf '  \033[32m✓\033[0m %-10s main, clean, has an origin\n' "$T"
 done
+
+# THE PRECONDITION THIS RUN ACTUALLY FAILS ON. MyCalMind installs onto a
+# phone; without one its lane refuses — and being last, it refuses AFTER the
+# earlier repos have deployed to production, tagged and pushed. Those do not
+# come back, so the question gets asked here instead, while nothing has moved.
+case " $PLAN " in
+  *" MyCalMind "*)
+    DEVJSON=$(mktemp -t coremind-devices)
+    if xcrun devicectl list devices --json-output "$DEVJSON" >/dev/null 2>&1; then
+      N=$(python3 - "$DEVJSON" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+n = sum(1 for x in d.get('result', {}).get('devices', [])
+        if x.get('hardwareProperties', {}).get('platform') == 'iOS'
+        and x.get('connectionProperties', {}).get('tunnelState') in ('connected', 'available'))
+print(n)
+PY
+)
+    else
+      N=0
+    fi
+    rm -f "$DEVJSON"
+    if [ "${N:-0}" -lt 1 ]; then
+      echo "  refusing: MyCalMind is in the plan and no iPhone is reachable." >&2
+      echo "  It deploys LAST, so it would refuse after the others had already" >&2
+      echo "  shipped, tagged and pushed. Plug one in, or leave it out:" >&2
+      echo "    sh bin/dtp.sh core          (cascades to the three web apps)" >&2
+      exit 1
+    fi
+    printf '  \033[32m✓\033[0m %-10s %s reachable iPhone(s)\n' "MyCalMind" "$N"
+    ;;
+esac
 [ "$PLANONLY" = 0 ] || exit 0
 
 for T in $PLAN; do
@@ -103,8 +141,17 @@ for T in $PLAN; do
   echo "──────────────────────────────── $LANE $T"
   case "$T" in
     core)
+      # tdtp means the tests run. Without this the core lane tagged and pushed
+      # a canon release having executed nothing — in the steady state the
+      # pre-flight insists on, propagation writes no files and therefore
+      # proves no consumer either.
+      if [ "$FULL" = 1 ]; then
+        echo "==> CoreMind's own suite"
+        npm test
+        npm run -s typecheck
+      fi
       # Propagate, then hold the whole suite to it.
-      sh bin/deploy-core.sh | grep -v '^CORE_WROTE='
+      sh bin/deploy-core.sh
       if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
         echo "CoreMind itself is dirty after propagating — look" >&2; exit 1
       fi

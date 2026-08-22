@@ -33,7 +33,14 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run)   DRY=1 ;;
     --copy-down) COPYDOWN=1 ;;
-    --only)      ONLY="$2"; shift ;;
+    --only)
+      # `shift` without a value took the NEXT FLAG as the name (--only
+      # --dry-run swallowed the dry run) or, at the end of argv, shifted past
+      # the end and killed the script with nothing said.
+      case "${2:-}" in
+        ''|-*) echo "--only needs a consumer name" >&2; exit 1 ;;
+      esac
+      ONLY="$2"; shift ;;
     *) echo "unknown flag: $1" >&2; exit 1 ;;
   esac
   shift
@@ -56,10 +63,24 @@ for TSV in consumers/*.tsv; do
   CHECKED=$((CHECKED + 1))
   echo "== $NAME ($ROOT)"
 
-  # Clean tree, or nothing. Checked per repo, before that repo is written to.
-  if [ "$DRY" = 0 ] && [ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no)" ]; then
-    echo "  refusing: $NAME has uncommitted tracked changes — this writes over source" >&2
-    git -C "$ROOT" status --porcelain --untracked-files=no | sed 's/^/    /' >&2
+  # Clean tree, or nothing. Checked per repo, before that repo is written to,
+  # and checked on a DRY RUN too — a rehearsal that prints a write plan for a
+  # repo the real run will refuse is a rehearsal of the wrong thing.
+  #
+  # The status is captured with its EXIT CODE. `[ -n "$(git status ...)" ]`
+  # reads empty output as "clean", and git prints nothing to stdout when it
+  # fails — not a repository, a broken index, no permission — so the check
+  # failed OPEN and the script went on to overwrite source.
+  if ST=$(git -C "$ROOT" status --porcelain --untracked-files=no 2>&1); then
+    if [ -n "$ST" ]; then
+      echo "  refusing: $NAME has uncommitted tracked changes — this writes over source" >&2
+      printf '%s\n' "$ST" | sed 's/^/    /' >&2
+      [ "$DRY" = 0 ] && exit 1
+      echo "  (dry run: continuing, but the real run stops here)" >&2
+    fi
+  else
+    echo "  refusing: cannot read $NAME's git status — not overwriting source blind" >&2
+    printf '%s\n' "$ST" | sed 's/^/    /' >&2
     exit 1
   fi
 
@@ -124,15 +145,37 @@ if [ "$DRY" = 0 ] && [ -n "$TOUCHED" ]; then
     ROOT="$PARENT/$NAME"
     echo ""
     echo "==> proving $NAME with its own suite"
-    if [ -d "$ROOT/node_modules" ]; then
-      ( cd "$ROOT" && npm run -s typecheck ) \
-        || { echo "$NAME's typecheck FAILED with canon in place — look before committing" >&2; exit 1; }
-      ( cd "$ROOT" && npm run -s test:core -- --reporter=dot >/dev/null 2>&1 ) \
-        || { echo "$NAME's core suite FAILED with canon in place — look before committing" >&2; exit 1; }
-      echo "    typecheck and core suite green"
-    else
-      echo "    SKIPPED: $NAME has no node_modules — run npm install there and re-check" >&2
+    # An UNPROVEN copy is a failure, not a pass. Every reason the proof cannot
+    # run ends this script non-zero, because bin/deploy.sh cascades production
+    # deploys off its exit status: "we could not check" must never reach that
+    # as "we checked".
+    if [ ! -d "$ROOT/node_modules" ]; then
+      echo "$NAME has no node_modules, so the copy cannot be proven." >&2
+      echo "  Run \`npm install\` there and re-run; the files are already written." >&2
+      exit 1
     fi
+    # Named explicitly rather than trusted: `npm run typecheck` in a repo with
+    # no such script exits 1 saying "Missing script", which this would have
+    # reported as a FAILED TYPECHECK — blaming a check that never ran.
+    if ! ( cd "$ROOT" && npm run -s typecheck --silent >/dev/null 2>&1 ) \
+       && ! node -e "process.exit((require('$ROOT/package.json').scripts||{}).typecheck?0:1)"; then
+      echo "$NAME defines no \`typecheck\` script — the copy cannot be proven the usual way." >&2
+      exit 1
+    fi
+    LOG=$(mktemp -t coremind-proof)
+    if ! ( cd "$ROOT" && npm run -s typecheck ) >"$LOG" 2>&1; then
+      echo "$NAME's typecheck FAILED with canon in place — look before committing:" >&2
+      tail -25 "$LOG" >&2; echo "full output: $LOG" >&2; exit 1
+    fi
+    if ! ( cd "$ROOT" && npm run -s test:core -- --reporter=dot ) >"$LOG" 2>&1; then
+      # Its output is KEPT. Discarding it left "the core suite failed" as the
+      # whole report, with the consumer's source already overwritten and no
+      # way to tell a real regression from a harness problem.
+      echo "$NAME's core suite FAILED with canon in place — look before committing:" >&2
+      grep -E '✕|×|FAIL|Error|Tests ' "$LOG" | tail -20 >&2; echo "full output: $LOG" >&2; exit 1
+    fi
+    rm -f "$LOG"
+    echo "    typecheck and core suite green"
   done
 fi
 

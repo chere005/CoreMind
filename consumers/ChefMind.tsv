@@ -123,10 +123,10 @@ fork	canon/app/src/components/ocr.ts	app/src/components/ocr.ts	app-name string
 fork	canon/app/src/config.ts	app/src/config.ts	deliberate: cross-path API derivation (/calmind/api on the same origin)
 fork	canon/app/src/screens/Login.tsx	app/src/screens/Login.tsx	branding strings
 fork	canon/app/src/screens/RecipeEditor.tsx	app/src/screens/RecipeEditor.tsx	two-line t→cur rename
-fork	canon/desktop/package.json	desktop/package.json	differs from canon — deliberate per the analysis
-fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	differs from canon — deliberate per the analysis
+fork	canon/desktop/package.json	desktop/package.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
+fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/src-tauri/src/main.rs	desktop/src-tauri/src/main.rs	differs from canon — deliberate per the analysis
-fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	differs from canon — deliberate per the analysis
+fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	differs from canon — deliberate per the analysis
 fork	canon/packages/core/package.json	packages/core/package.json	differs from canon — deliberate per the analysis
 fork	canon/packages/core/src/meetreq.ts	packages/core/src/meetreq.ts	pre-MeetAvail stub kept for record lockstep

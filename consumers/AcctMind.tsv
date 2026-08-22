@@ -2,8 +2,8 @@
 # mode	canon	local	note — see README.md. exact: byte-identical, the check fails on drift.
 exact	canon/desktop/src-tauri/build.rs	desktop/src-tauri/build.rs	
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
-fork	canon/desktop/package.json	desktop/package.json	differs from canon — deliberate per the analysis
-fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	differs from canon — deliberate per the analysis
+fork	canon/desktop/package.json	desktop/package.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
+fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/src-tauri/src/main.rs	desktop/src-tauri/src/main.rs	differs from canon — deliberate per the analysis
-fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	differs from canon — deliberate per the analysis
+fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	differs from canon — deliberate per the analysis
