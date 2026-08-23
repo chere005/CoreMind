@@ -118,9 +118,9 @@ exact	canon/tsconfig.base.json	tsconfig.base.json
 fork	canon/app/src/Logo.tsx	app/src/Logo.tsx	its own mark
 fork	canon/app/src/api.ts	app/src/api.ts	deliberate: SYNC_SPACE constant AND the space field on every sync request
 fork	canon/app/src/components/FolderPick.tsx	app/src/components/FolderPick.tsx	deliberate: !payload.shopping filter
-fork	canon/app/src/components/KindIcons.tsx	app/src/components/KindIcons.tsx	deliberate: adds BasketIcon
+fork	canon/app/src/components/KindIcons.tsx	app/src/components/KindIcons.tsx	deliberate: adds BasketIcon and PantryIcon
 fork	canon/app/src/components/ocr.ts	app/src/components/ocr.ts	app-name string
-fork	canon/app/src/config.ts	app/src/config.ts	deliberate: cross-path API derivation (/calmind/api on the same origin)
+fork	canon/app/src/config.ts	app/src/config.ts	deliberate: cross-path API derivation (/calmind/api on the same origin); local dev matched on HOST, not a port allow-list
 fork	canon/app/src/screens/Login.tsx	app/src/screens/Login.tsx	branding strings
 fork	canon/app/src/screens/RecipeEditor.tsx	app/src/screens/RecipeEditor.tsx	two-line t→cur rename
 fork	canon/desktop/package.json	desktop/package.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
@@ -130,8 +130,8 @@ fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	c
 fork	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	differs from canon — deliberate per the analysis
 fork	canon/packages/core/package.json	packages/core/package.json	differs from canon — deliberate per the analysis
 fork	canon/packages/core/src/meetreq.ts	packages/core/src/meetreq.ts	pre-MeetAvail stub kept for record lockstep
-fork	canon/packages/core/src/normalize.ts	packages/core/src/normalize.ts	deliberate: seed-folder table (gold Shopping, no calendar/habit starters), folder() shopping param, appFolders filter
-fork	canon/packages/core/src/types.ts	packages/core/src/types.ts	deliberate: Folder.shopping flag; ALSO lags MeetAvail — reconcile by hand
+fork	canon/packages/core/src/normalize.ts	packages/core/src/normalize.ts	deliberate: seed-folder table (gold Shopping, teal Pantry, no calendar/habit starters), folder() flag param, appFolders excludes both flags
+fork	canon/packages/core/src/types.ts	packages/core/src/types.ts	deliberate: Folder.shopping AND Folder.pantry flags, Note.variants + RecipeVariant; ALSO lags MeetAvail — reconcile by hand
 fork	canon/packages/core/test/batchlimit.test.ts	packages/core/test/batchlimit.test.ts	no server here: canon carries the app.php-agrees-with-the-contract half, which only CalMind can run
 fork	canon/packages/core/test/normalize.test.ts	packages/core/test/normalize.test.ts	follows normalize.ts fork
 fork	canon/packages/core/test/protocolids.test.ts	packages/core/test/protocolids.test.ts	no server here: canon carries the app.php-agrees-with-the-contract half, which only CalMind can run
