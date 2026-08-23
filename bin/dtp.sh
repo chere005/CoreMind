@@ -133,6 +133,14 @@ done
 # including on a `set -e` exit nobody wrote a handler for, still closes the run
 # out instead of leaving it running for ever.
 RUN_ID=$(sh bin/report-status.sh start "$(echo "$LANE" | tr 'A-Z' 'a-z')" "$(echo "$PLAN" | sed 's/^ *//')" 2>/dev/null || true)
+# ONE CARD PER BATCH — Sean, 2026-08-23: "there should be one card per tdtp if
+# multiple jobs are triggered in one batch". Every app ships itself now, and
+# each lane opened a run of its own, so a five-repo tdtp drew five cards and
+# the history charts had no single thing to filter by. The parent's id travels
+# down; a lane that sees it reports nothing and lets this run stand for it.
+# The card's target is the whole plan, which is what makes the charts show one
+# plot per repo in the batch.
+export MIND_RUN_ID="$RUN_ID"
 
 # ------------------------------------------------------- the per-minute beat
 # Sean, 2026-08-23: "i want an update per minute during any tdtp or dtp". A
