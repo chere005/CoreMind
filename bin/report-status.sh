@@ -51,8 +51,19 @@ host() {
 # remote shell writes it in one shot with the permissions it needs.
 push_remote() {
   H=$(host) || { echo "  (status: no deploy.conf with a HOST — not reported)" >&2; return 0; }
+  # AND SWEEP, in the same connection. The history graph is built from samples
+  # recorded when the state CHANGES, and nothing was recording one at the two
+  # moments that matter most: a run starting and a run ending. A sample only
+  # landed if an unrelated sweep happened to fire mid-release, so a short dtp
+  # could come and go leaving no purple on the graph at all.
+  #
+  # Sweeping here means every start, every beat and every finish writes one —
+  # which is what makes the three dots (before, In Progress, after) certain
+  # rather than lucky. It runs after the history file is in place, so the
+  # sweep reads the run it is reporting.
   ssh -o BatchMode=yes -o ConnectTimeout=10 "$H" \
-      "mkdir -p $(dirname "$REMOTE") && cat > $REMOTE && chmod a+r $REMOTE" \
+      "mkdir -p $(dirname "$REMOTE") && cat > $REMOTE && chmod a+r $REMOTE;
+       php /home/protected/lib/status-sweep.php >/dev/null 2>&1 || true" \
       < "$LOCAL" >/dev/null 2>&1 \
     || { echo "  (status: could not reach the server — not reported)" >&2; return 0; }
 }
