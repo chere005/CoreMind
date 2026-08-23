@@ -61,7 +61,10 @@ case "${1:-}" in
   start)
     KIND="${2:-dtp}"; TARGET="${3:-?}"
     ID=$(date -u +%Y%m%d%H%M%S)
-    WHEN=$(date '+%Y-%m-%d %H:%M %Z')
+    # 12-hour Central, and an epoch beside it. The string is what a human
+    # reads if anything ever cats this file; the epoch is what the page
+    # formats from, so a display change never needs the history rewritten.
+    WHEN=$(TZ=America/Chicago date '+%Y-%m-%d %I:%M %p %Z')
     python3 - "$LOCAL" "$ID" "$KIND" "$TARGET" "$WHEN" "$KEEP" <<'PY' || true
 import json, os, sys
 path, rid, kind, target, when, keep = sys.argv[1:7]
@@ -92,7 +95,7 @@ PY
     ID="${2:-}"; shift 2 2>/dev/null || shift $#
     SUMMARY="$*"
     [ -n "$ID" ] || exit 0
-    WHEN=$(date '+%H:%M %Z')
+    WHEN=$(TZ=America/Chicago date '+%I:%M %p %Z')
     python3 - "$LOCAL" "$ID" "$WHEN" "$SUMMARY" <<'PY' || true
 import json, sys
 path, rid, when, summary = sys.argv[1:5]
@@ -116,7 +119,7 @@ PY
     ID="${2:-}"; STATUS="${3:-ok}"; SEV="${4:-0}"; shift 4 2>/dev/null || shift $#
     SUMMARY="$*"
     [ -n "$ID" ] || { echo "  (status: finish without an id — not reported)" >&2; exit 0; }
-    WHEN=$(date '+%Y-%m-%d %H:%M %Z')
+    WHEN=$(TZ=America/Chicago date '+%Y-%m-%d %I:%M %p %Z')
     python3 - "$LOCAL" "$ID" "$STATUS" "$SEV" "$WHEN" "$SUMMARY" <<'PY' || true
 import json, sys
 path, rid, status, sev, when, summary = sys.argv[1:7]
