@@ -6,9 +6,14 @@
 #   sh bin/dtp.sh --only AcctMind    that one alone
 #   sh bin/dtp.sh all --plan         resolve the order and stop
 #   sh bin/dtp.sh all --full         tdtp: the full test run in each lane
-#   sh bin/dtp.sh all --platforms    …and build the platforms a release does
-#                                    not ship by itself: the macOS bundle and
-#                                    the iOS build on the connected phone
+#   sh bin/dtp.sh all --platforms    …and build the platforms too: the macOS
+#                                    bundle and the iOS build on the phone
+#
+# WHERE A PLATFORM BUILD ACTUALLY HAPPENS depends on the app. One carrying its
+# own tools/build-platforms.sh ships itself — this script passes --platforms
+# through to its lane and does not touch it otherwise. The rest are built here
+# afterwards, out of bin/build-platforms.sh, until their repos grow the same
+# file. ChefMind was the first, 2026-08-23.
 #
 # Each repo's OWN lane does the work — tools/dtp.sh in the four apps, which
 # already bump the minor version, refuse a dirty tree or a non-main branch,
@@ -250,13 +255,40 @@ for T in $PLAN; do
     *)
       R="$PARENT/$T"
       phase "$T — $([ "$FULL" = 1 ] && echo 'test run, then deploy, tag and push' || echo 'deploy, tag and push')"
-      if [ "$FULL" = 1 ]; then ( cd "$R" && sh tools/tdtp.sh ); else ( cd "$R" && sh tools/dtp.sh ); fi
+      # DOES THE APP SHIP ITSELF? An app carrying its own
+      # tools/build-platforms.sh owns every artifact it releases, and this
+      # script's job for it is only to run its lane in the right ORDER among
+      # the others — Sean, 2026-08-23: "This repo should be able to ship
+      # itself (and needed dependencies) on its own... coremind is to ship all
+      # apps simultaneously."
+      #
+      # Detected rather than listed, so the day CalMind or AcctMind grows the
+      # same file this stops double-building it with no edit here. ChefMind is
+      # the first and, today, the only one.
+      SELF_SHIPS=0
+      [ -f "$R/tools/build-platforms.sh" ] && SELF_SHIPS=1
+      # --platforms keeps its meaning for a self-shipping app by being passed
+      # THROUGH: its lane builds everything when the flag is set and takes
+      # --web (the release, no platform builds) when it is not. Without this
+      # the flag would silently stop controlling half the suite.
+      LANE_ARGS=""
+      if [ "$SELF_SHIPS" = 1 ] && [ "$PLATFORMS" = 0 ]; then LANE_ARGS="--web"; fi
+      if [ "$FULL" = 1 ]; then
+        ( cd "$R" && sh tools/tdtp.sh $LANE_ARGS )
+      else
+        ( cd "$R" && sh tools/dtp.sh $LANE_ARGS )
+      fi
+      if [ "$SELF_SHIPS" = 1 ] && [ "$PLATFORMS" = 1 ]; then
+        # Its own lane already did them, in the right place: the desktop
+        # bundle before its tag, the device builds after its push.
+        PLATFORM_OK="$PLATFORM_OK $T"
+      fi
       # THE PLATFORMS THE RELEASE DID NOT SHIP. Run AFTER the lane, and its
       # failure is reported rather than fatal: by this point the app is
       # deployed, tagged and pushed, and none of that comes back because a
       # Rust build or a phone did not cooperate. The run still ends non-zero,
       # so "it all worked" cannot be read off the exit status.
-      if [ "$PLATFORMS" = 1 ] && [ "$T" != "MyCalMind" ]; then
+      if [ "$PLATFORMS" = 1 ] && [ "$SELF_SHIPS" = 0 ] && [ "$T" != "MyCalMind" ]; then
         phase "$T — building the platforms its release does not ship"
         if sh bin/build-platforms.sh "$T"; then
           PLATFORM_OK="$PLATFORM_OK $T"

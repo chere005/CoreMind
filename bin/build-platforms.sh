@@ -2,6 +2,15 @@
 # The platforms a release does NOT ship by itself: the macOS desktop bundle,
 # the iOS build on the connected iPhone, and an Android build on an emulator.
 #
+# FOR THE APPS THAT DO NOT YET SHIP THEMSELVES. An app with its own
+# tools/build-platforms.sh owns its artifacts and its lane builds them in the
+# right places — the desktop bundle before the tag, the devices after the push
+# — so bin/dtp.sh passes --platforms through and never calls this for it.
+# ChefMind moved that way on 2026-08-23, after a release tagged and pushed
+# while its Mac bundle stayed a day behind and had never heard of the Pantry
+# tab. This file is the origin those copies come from; CalMind, AcctMind and
+# MyCalMind are still built here.
+#
 #   sh bin/build-platforms.sh CalMind              all three, for that app
 #   sh bin/build-platforms.sh CalMind --mac        just the desktop bundle
 #   sh bin/build-platforms.sh CalMind --ios        just the phone
