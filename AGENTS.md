@@ -57,6 +57,15 @@ and the doctrine; this file is how to work in here.
   multiple jobs are triggered in one batch". Every app ships itself now and
   each lane would otherwise open a run of its own, so the parent's id travels
   down; a lane that sees it reports nothing and lets the parent's card stand.
+- **A lane's non-zero exit means "shipped, a build is owed" — not "stopped".**
+  A self-shipping lane ends non-zero when a device build did not finish, so
+  "it all worked" cannot be read off its exit status. Under `set -e` that would
+  abort the batch at the first unplugged phone and stop every repo after it
+  from shipping at all, which is a far worse answer than the one the exit code
+  is trying to give. `bin/dtp.sh` catches it: the verdict is folded into
+  `PLATFORM_BAD`, the run continues, and this script ends non-zero itself at
+  the finish. A lane that failed BEFORE its tag still stops everything — the
+  TAG is the evidence for which happened, never the exit code.
 - **`deploy-core.sh` writes over app source and commits nothing.** It refuses
   a dirty consumer (two changes in one diff has no way back), never touches a
   `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
