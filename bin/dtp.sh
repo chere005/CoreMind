@@ -151,17 +151,54 @@ esac
 # including on a `set -e` exit nobody wrote a handler for, still closes the run
 # out instead of leaving it running for ever.
 RUN_ID=$(sh bin/report-status.sh start "$(echo "$LANE" | tr 'A-Z' 'a-z')" "$(echo "$PLAN" | sed 's/^ *//')" 2>/dev/null || true)
+
+# ------------------------------------------------------- the per-minute beat
+# Sean, 2026-08-23: "i want an update per minute during any tdtp or dtp". A
+# suite run takes twenty minutes and reported exactly twice — start and finish
+# — so the page said "running" for all of it and could not say running WHAT.
+#
+# The lane writes its current phase to a file; a background loop pushes that
+# file's contents once a minute. Two pieces rather than one because the lane
+# is a sequence of long-running foreground commands (a full test suite, an
+# rsync, an xcodebuild) and none of them can stop to report; the only thing
+# that can report on a fixed clock is something else running alongside.
+PHASE_FILE="$(pwd)/.status-phase"
+phase() { printf '%s' "$*" > "$PHASE_FILE"; }
+phase "starting"
+BEAT_PID=""
+if [ -n "$RUN_ID" ]; then
+  (
+    while :; do
+      sleep 60
+      [ -f "$PHASE_FILE" ] || exit 0
+      sh bin/report-status.sh beat "$RUN_ID" "$(cat "$PHASE_FILE" 2>/dev/null)" >/dev/null 2>&1 || true
+    done
+  ) &
+  BEAT_PID=$!
+fi
+
+stop_beat() {
+  [ -n "$BEAT_PID" ] && kill "$BEAT_PID" >/dev/null 2>&1
+  BEAT_PID=""
+  rm -f "$PHASE_FILE"
+}
+
 report_fail() {
+  stop_beat
   [ -n "$RUN_ID" ] || return 0
   sh bin/report-status.sh finish "$RUN_ID" failed 3 \
-    "Stopped during$PLAN. Nothing after the failure was shipped; what ran before it was." 2>/dev/null || true
+    "Stopped during $(cat "$PHASE_FILE" 2>/dev/null || echo "$PLAN"). Nothing after the failure was shipped; what ran before it was." 2>/dev/null || true
   RUN_ID=""
 }
+# The beat is killed on EVERY exit path, including the ones nobody wrote a
+# handler for: a loop left running after the shell dies would keep a finished
+# run painted purple until the next reboot.
 trap report_fail EXIT INT TERM
 
 PLATFORM_OK=""; PLATFORM_BAD=""
 for T in $PLAN; do
   echo ""
+  phase "$LANE $T — $(echo "$PLAN" | tr -s ' ' | sed 's/^ //') in this run"
   echo "──────────────────────────────── $LANE $T"
   case "$T" in
     core)
@@ -171,9 +208,11 @@ for T in $PLAN; do
       # proves no consumer either.
       if [ "$FULL" = 1 ]; then
         echo "==> CoreMind's own suite"
+        phase "core — running CoreMind's own suite"
         npm test
         npm run -s typecheck
       fi
+      phase "core — propagating canon into the consumers"
       # Propagate, then hold the whole suite to it.
       sh bin/deploy-core.sh
       if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
@@ -210,6 +249,7 @@ for T in $PLAN; do
       ;;
     *)
       R="$PARENT/$T"
+      phase "$T — $([ "$FULL" = 1 ] && echo 'test run, then deploy, tag and push' || echo 'deploy, tag and push')"
       if [ "$FULL" = 1 ]; then ( cd "$R" && sh tools/tdtp.sh ); else ( cd "$R" && sh tools/dtp.sh ); fi
       # THE PLATFORMS THE RELEASE DID NOT SHIP. Run AFTER the lane, and its
       # failure is reported rather than fatal: by this point the app is
@@ -217,6 +257,7 @@ for T in $PLAN; do
       # Rust build or a phone did not cooperate. The run still ends non-zero,
       # so "it all worked" cannot be read off the exit status.
       if [ "$PLATFORMS" = 1 ] && [ "$T" != "MyCalMind" ]; then
+        phase "$T — building the platforms its release does not ship"
         if sh bin/build-platforms.sh "$T"; then
           PLATFORM_OK="$PLATFORM_OK $T"
         else
@@ -239,6 +280,7 @@ fi
 # releases shipped and are live — what did not happen is a desktop or device
 # build, which is a thing to go and look at rather than a thing that is broken
 # for anybody using the apps.
+stop_beat
 if [ -n "$RUN_ID" ]; then
   SUM="Shipped$PLAN."
   [ -z "$PLATFORM_OK" ] || SUM="$SUM Platforms built:$PLATFORM_OK."

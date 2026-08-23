@@ -2,6 +2,7 @@
 # Report a dtp/tdtp run to the status page at seancheren.com/status.
 #
 #   sh bin/report-status.sh start  <kind> <target>      -> prints a run id
+#   sh bin/report-status.sh beat   <id> <summary>       -> "still running, here"
 #   sh bin/report-status.sh finish <id> <status> <severity> <summary>
 #
 # `kind` is dtp or tdtp, `target` the plan ("core CalMind ChefMind"), `status`
@@ -74,6 +75,36 @@ json.dump(hist[:int(keep)], open(path, 'w'), indent=1)
 PY
     push_remote
     printf '%s' "$ID"
+    ;;
+  beat)
+    # THE HEARTBEAT. Sean, 2026-08-23: "i want an update per minute during any
+    # tdtp or dtp". A suite run takes twenty minutes and used to report exactly
+    # twice — at the start and at the end — so the page said "running" for the
+    # whole of it and could not say running WHAT. This says which lane is in
+    # flight and when it last said so, which is also how a HUNG run becomes
+    # visible: the phase stops changing and the stamp stops moving.
+    ID="${2:-}"; shift 2 2>/dev/null || shift $#
+    SUMMARY="$*"
+    [ -n "$ID" ] || exit 0
+    WHEN=$(date '+%H:%M %Z')
+    python3 - "$LOCAL" "$ID" "$WHEN" "$SUMMARY" <<'PY' || true
+import json, sys
+path, rid, when, summary = sys.argv[1:5]
+try:
+    hist = json.load(open(path))
+    if not isinstance(hist, list): hist = []
+except Exception:
+    hist = []
+for h in hist:
+    # Only a run still marked running: a beat arriving after finish (the
+    # heartbeat losing a race with the kill) must not reopen a closed run.
+    if h.get('id') == rid and h.get('status') == 'running':
+        h['summary'] = (summary or 'Running.') + '  (last update ' + when + ')'
+        h['beat_at'] = when
+        break
+json.dump(hist, open(path, 'w'), indent=1)
+PY
+    push_remote
     ;;
   finish)
     ID="${2:-}"; STATUS="${3:-ok}"; SEV="${4:-0}"; shift 4 2>/dev/null || shift $#
