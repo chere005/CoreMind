@@ -84,7 +84,7 @@ LANE=dtp; [ "$FULL" = 0 ] || LANE=tdtp
 echo "==> $LANE plan:$PLAN"
 [ "$ONLY" = 1 ] && echo "    (--only: downstream cascade suppressed)"
 case " $PLAN " in
-  *" MyCalMind "*) echo "    (MyCalMind's deploy installs onto a connected iPhone)" ;;
+  *" MyCalMind "*) echo "    (MyCalMind builds; its phone install stays the explicit tools/deploy-device.sh)" ;;
 esac
 
 # ------------------------------------------------------- look before shipping
@@ -112,37 +112,14 @@ for T in $PLAN; do
   printf '  \033[32m✓\033[0m %-10s main, clean, has an origin\n' "$T"
 done
 
-# THE PRECONDITION THIS RUN ACTUALLY FAILS ON. MyCalMind installs onto a
-# phone; without one its lane refuses — and being last, it refuses AFTER the
-# earlier repos have deployed to production, tagged and pushed. Those do not
-# come back, so the question gets asked here instead, while nothing has moved.
-case " $PLAN " in
-  *" MyCalMind "*)
-    DEVJSON=$(mktemp -t coremind-devices)
-    if xcrun devicectl list devices --json-output "$DEVJSON" >/dev/null 2>&1; then
-      N=$(python3 - "$DEVJSON" <<'PY'
-import json, sys
-d = json.load(open(sys.argv[1]))
-n = sum(1 for x in d.get('result', {}).get('devices', [])
-        if x.get('hardwareProperties', {}).get('platform') == 'iOS'
-        and x.get('connectionProperties', {}).get('tunnelState') in ('connected', 'available'))
-print(n)
-PY
-)
-    else
-      N=0
-    fi
-    rm -f "$DEVJSON"
-    if [ "${N:-0}" -lt 1 ]; then
-      echo "  refusing: MyCalMind is in the plan and no iPhone is reachable." >&2
-      echo "  It deploys LAST, so it would refuse after the others had already" >&2
-      echo "  shipped, tagged and pushed. Plug one in, or leave it out:" >&2
-      echo "    sh bin/dtp.sh core          (cascades to the three web apps)" >&2
-      exit 1
-    fi
-    printf '  \033[32m✓\033[0m %-10s %s reachable iPhone(s)\n' "MyCalMind" "$N"
-    ;;
-esac
+# The iPhone pre-flight is GONE (2026-08-23). It guarded the lane MyCalMind
+# used to have — deploy-device.sh installing onto a connected phone, refusing
+# without one, LAST, after everything else had shipped. MyCalMind ships itself
+# now and its lane deliberately never touches a phone: iOS is build-only (an
+# install would spend one of the 3 free-team slots), the phone install is the
+# explicit tools/deploy-device.sh gesture and no release's side effect. A
+# check for hardware nothing in the plan needs was refusing real releases.
+
 [ "$PLANONLY" = 0 ] || exit 0
 
 # ------------------------------------------------------- tell the status page
