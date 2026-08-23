@@ -140,6 +140,25 @@ PY
 esac
 [ "$PLANONLY" = 0 ] || exit 0
 
+# ------------------------------------------------------- tell the status page
+# Sean, 2026-08-22: the status page keeps the last 5 runs and paints one that
+# is running right now purple. Reported from HERE rather than from each repo's
+# own lane, because this is the thing that knows the whole plan — a run is
+# "core, then the three web apps", not four unrelated releases.
+#
+# It cannot fail the release: report-status.sh warns and exits 0 on every path.
+# The trap is what makes the purple honest — a lane that dies anywhere below,
+# including on a `set -e` exit nobody wrote a handler for, still closes the run
+# out instead of leaving it running for ever.
+RUN_ID=$(sh bin/report-status.sh start "$(echo "$LANE" | tr 'A-Z' 'a-z')" "$(echo "$PLAN" | sed 's/^ *//')" 2>/dev/null || true)
+report_fail() {
+  [ -n "$RUN_ID" ] || return 0
+  sh bin/report-status.sh finish "$RUN_ID" failed 3 \
+    "Stopped during$PLAN. Nothing after the failure was shipped; what ran before it was." 2>/dev/null || true
+  RUN_ID=""
+}
+trap report_fail EXIT INT TERM
+
 PLATFORM_OK=""; PLATFORM_BAD=""
 for T in $PLAN; do
   echo ""
@@ -214,8 +233,26 @@ echo "────────────────────────�
 echo "$LANE complete:$PLAN"
 if [ "$PLATFORMS" = 1 ]; then
   [ -z "$PLATFORM_OK" ]  || echo "platforms built:$PLATFORM_OK"
+fi
+
+# Close the run out. A platform build that failed is severity 2, not 3: the
+# releases shipped and are live — what did not happen is a desktop or device
+# build, which is a thing to go and look at rather than a thing that is broken
+# for anybody using the apps.
+if [ -n "$RUN_ID" ]; then
+  SUM="Shipped$PLAN."
+  [ -z "$PLATFORM_OK" ] || SUM="$SUM Platforms built:$PLATFORM_OK."
   if [ -n "$PLATFORM_BAD" ]; then
-    echo "platforms FAILED:$PLATFORM_BAD (their releases shipped; the builds did not)" >&2
-    exit 1
+    SUM="$SUM Platform builds FAILED:$PLATFORM_BAD — those releases are live, the builds are not."
+    sh bin/report-status.sh finish "$RUN_ID" ok 2 "$SUM" 2>/dev/null || true
+  else
+    sh bin/report-status.sh finish "$RUN_ID" ok 0 "$SUM" 2>/dev/null || true
   fi
+  RUN_ID=""
+fi
+trap - EXIT INT TERM
+
+if [ "$PLATFORMS" = 1 ] && [ -n "$PLATFORM_BAD" ]; then
+  echo "platforms FAILED:$PLATFORM_BAD (their releases shipped; the builds did not)" >&2
+  exit 1
 fi

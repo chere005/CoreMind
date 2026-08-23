@@ -31,12 +31,75 @@ and the doctrine; this file is how to work in here.
   one and add it to the other in the same commit — two graphs that disagree
   is worse than the memory this replaced. A deploy CASCADES by default;
   `--only` is the way to ship one thing.
+- **`npm run dtp` / `npm run tdtp` wrap `bin/dtp.sh`, the suite orchestrator
+  this repo owns** — not a per-repo release script like the four apps have.
+  dtp deploys, tags, and pushes each targeted repo's own lane, in
+  `bin/deploy.sh`'s order; tdtp (`--full`) runs each repo's own test suite
+  first. Unlike the apps, there is no default target — pass one after `--`:
+  `npm run dtp -- core` (CoreMind alone — propagate canon,
+  `bin/check-drift.sh`, tag, push, no cascade), `npm run dtp -- all` (every
+  repo, core first), or `npm run tdtp -- all --platforms` (test-first, whole
+  suite, plus the platform builds no repo's own deploy ships — see
+  Platforms). Tags are bare `x.y.0`, never `v`-prefixed, same as every
+  Mind-suite repo; core's own lane bumps its minor version only on a tag
+  collision, otherwise it tags whatever `package.json` already says.
 - **`deploy-core.sh` writes over app source and commits nothing.** It refuses
   a dirty consumer (two changes in one diff has no way back), never touches a
   `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
   by name, and runs each touched app's own typecheck and core suite before
   claiming the copy landed.
 - **`main` is the branch.** Stage explicit paths — never `git add -A`.
+
+## Platforms
+
+CoreMind ships nothing of its own — no server, no app, no platform build; it
+tags itself and stops. What it owns is `bin/build-platforms.sh`, the shared,
+table-driven script that builds the platforms none of the four apps' own
+deploy ships by itself:
+
+- **macOS** — a Tauri desktop bundle for CalMind, ChefMind and AcctMind, and
+  a real **Mac Catalyst** app for MyCalMind, which has no Tauri shell. All four
+  are copied into `/Applications` and the copy is verified; the install step
+  was missing until 2026-08-22, which is why "i don't see chefmind on macos"
+  was true of every app at once and of none of their builds.
+
+  Catalyst took 26 attempts and four distinct causes, all now handled by the
+  script plus MyCalMind's own `withMacCatalyst` config plugin: the widget
+  target needed `SUPPORTS_MACCATALYST` too; there is no x86_64 Catalyst slice
+  upstream, so the build is arm64-only; Expo's and RN's prebuilt XCFrameworks
+  ship no maccatalyst copy, so it builds from source
+  (`EXPO_USE_PRECOMPILED_MODULES=0 RCT_USE_PREBUILT_RNCORE=0`); and the
+  vendored ReactNativeDependencies bundle is malformed for that slice.
+
+  **That last repair is not durable yet.** The `[CP-User] [RNDeps]` script
+  phase is `alwaysOutOfDate`, so it re-extracts the pristine bundle mid-build
+  and undoes anything fixed beforehand — which is why the repair is PATCHED
+  INTO that phase by `bin/patch-rndeps-catalyst.js` rather than run before it.
+  The patch is idempotent and re-applied on every build, but it is a patch to
+  generated output: a fresh `expo prebuild` rewrites the pbxproj and the
+  script has to run again. It does, from here; the thing to know is that
+  nothing upstream has been fixed.
+- **iOS** — installs to the one physical iPhone via `devicectl`, for CalMind,
+  ChefMind, and AcctMind (that phone's free-tier cap is 3 installed apps,
+  already spent on those three; CalMind's install also carries its watch
+  companion app onto a paired Apple Watch when one is reachable). MyCalMind's
+  iOS build is BUILD ONLY — it deliberately does not install, to leave that
+  3rd device slot alone; its own `tools/deploy-device.sh` is the real install
+  path, run only when MyCalMind should occupy the slot.
+- **Android** — builds, installs, and launches on a local emulator (or
+  connected hardware), for all four apps: CalMind, ChefMind, AcctMind, and
+  MyCalMind.
+
+`--mac` / `--ios` / `--android` select a subset; no flag builds all three.
+Two rules the header states because both were proven the hard way: never run
+two heavy build/device processes at once on this machine — a flaky WebKit
+test under load and an Android emulator crash when gradle and xcodebuild
+overlapped have both actually happened, so serialize. And Xcode's
+`derivedDataPath` for these builds prefers `/Volumes/SPACE` when that scratch
+volume is mounted, while gradle's own cache deliberately stays on the
+internal disk — `/Volumes/SPACE` is exFAT and does not support the atomic
+directory/classpath writes gradle's cache needs (proven by a failed build
+against it).
 
 ## Traps
 

@@ -71,23 +71,23 @@ esac
 ROOT="$PARENT/$APP"
 [ -d "$ROOT" ] || { echo "no checkout at $ROOT" >&2; exit 1; }
 
-# Xcode derivedData for these builds is large (1-1.5G per app, per platform)
-# and untracked — it was filling the internal disk across a long session of
-# repeated builds. When a scratch volume is mounted, build there instead;
-# otherwise fall back to the old in-repo location.
-if [ -d /Volumes/SPACE ]; then
-  BUILD_SCRATCH="/Volumes/SPACE/coremind-build/$APP"
-  mkdir -p "$BUILD_SCRATCH"
-else
-  BUILD_SCRATCH="$ROOT/$APPDIR/ios"
-fi
+# Xcode derivedData stays on the INTERNAL disk, deliberately. A scratch
+# volume mounted exFAT was tried on 2026-08-22 and reverted: exFAT can't
+# store the extended attributes codesign needs, so any signed product
+# (an app extension with entitlements, a hardened-runtime Catalyst build,
+# a real device install) gets a "._<name>" AppleDouble sidecar file that
+# codesign then tries to sign as a subcomponent and fails on — "code
+# object is not signed at all". Same root cause that broke gradle's cache
+# there earlier in the same session. Large and untracked (1-1.5G per app,
+# per platform) is a real cost, but it has to be paid on APFS.
+BUILD_SCRATCH="$ROOT/$APPDIR/ios"
 
 if [ "$DRY" = 1 ]; then
   if [ "$WANT_MAC" = 1 ]; then
     case "$DESKTOP_WS" in
       -)        echo "would: skip macOS — $APP has no desktop shell" ;;
-      catalyst) echo "would: xcodebuild $APP for 'platform=macOS,variant=Designed for iPad' — BUILD ONLY, not launchable from a shell" ;;
-      *)        echo "would: (cd $ROOT && npm -w $DESKTOP_WS run build)" ;;
+      catalyst) echo "would: source-build prebuild, patch-rndeps-catalyst.js, xcodebuild $APP for 'platform=macOS,variant=Mac Catalyst,arch=arm64', install to /Applications" ;;
+      *)        echo "would: (cd $ROOT && npm -w $DESKTOP_WS run build), then install to /Applications" ;;
     esac
   fi
   if [ "$WANT_IOS" = 1 ]; then
@@ -104,6 +104,10 @@ fi
 # --------------------------------------------------------------- the iOS project
 # Shared by the iOS step AND MyCalMind's catalyst step, both of which build
 # out of the SAME generated ios/ directory — prebuilt at most once per run.
+# $1, if given, is extra "VAR=val VAR2=val2" env exported just for the
+# prebuild command — MyCalMind's catalyst step needs
+# EXPO_USE_PRECOMPILED_MODULES=0 RCT_USE_PREBUILT_RNCORE=0 (see its own
+# comment below); a plain iOS build needs neither and stays fast.
 IOS_WS=""
 prebuild_ios() {
   [ -n "$IOS_WS" ] && return 0
@@ -111,7 +115,7 @@ prebuild_ios() {
   [ -n "$IOS_WS" ] && return 0
   # LANG is not optional: CocoaPods dies in unicode_normalize without a UTF-8
   # locale, naming nothing useful.
-  ( cd "$ROOT/$APPDIR" && LANG=en_US.UTF-8 npx expo prebuild --platform ios --clean ) \
+  ( cd "$ROOT/$APPDIR" && eval "${1:-}" LANG=en_US.UTF-8 npx expo prebuild --platform ios --clean ) \
     || { echo "[$APP] prebuild failed" >&2; return 1; }
   IOS_WS=$(ls -d "$ROOT/$APPDIR"/ios/*.xcworkspace 2>/dev/null | head -1)
   [ -n "$IOS_WS" ] || { echo "[$APP] prebuild produced no xcworkspace" >&2; return 1; }
@@ -124,26 +128,54 @@ if [ "$WANT_MAC" = 1 ]; then
       echo "==> [$APP] macOS: no desktop shell in this app — skipped"
       ;;
     catalyst)
-      echo "==> [$APP] macOS (Designed for iPad) — BUILD ONLY, see header"
-      prebuild_ios || exit 1
+      echo "==> [$APP] macOS (Mac Catalyst)"
+      # Expo's prebuilt XCFrameworks (ExpoModulesCore, ExpoFont, ExpoFileSystem,
+      # ExpoModulesWorklets) carry NO maccatalyst slice at all in this SDK
+      # version — confirmed via ExpoModulesCore.xcframework's own Info.plist,
+      # which lists only ios-arm64 and ios-arm64_x86_64-simulator — and their
+      # CocoaPods-generated copy scripts have no code path for one either.
+      # Building every module from source sidesteps that: ExpoModulesCore's
+      # own podspec declares `:osx` support directly in its source_files
+      # branch, and source compiles for whatever destination Xcode is asked
+      # to target. RCT_USE_PREBUILT_RNCORE=0 does the same for React
+      # Native's own core (its prebuilt React.xcframework hit the same
+      # "bundle format is ambiguous" class of failure once ExpoModulesCore's
+      # was fixed).
+      prebuild_ios "EXPO_USE_PRECOMPILED_MODULES=0 RCT_USE_PREBUILT_RNCORE=0" || exit 1
       SCHEME=$(basename "$IOS_WS" .xcworkspace)
       DERIVED="$BUILD_SCRATCH/derived-mac"
       echo "    workspace: $(basename "$IOS_WS")  scheme: $SCHEME"
 
+      # ReactNativeDependencies.xcframework (folly/glog/boost — React
+      # Native's third-party C++ deps) has NO source-build option and DOES
+      # ship a maccatalyst slice, but that slice's bundle is malformed —
+      # see bin/patch-rndeps-catalyst.js for the full story and why the fix
+      # has to be baked into its own "Replace React Native Dependencies"
+      # build phase rather than just applied once before this build.
+      node "$(dirname "$0")/patch-rndeps-catalyst.js" "$ROOT/$APPDIR/ios/Pods/Pods.xcodeproj/project.pbxproj" \
+        || { echo "[$APP] could not patch ReactNativeDependencies' Catalyst bundle" >&2; exit 1; }
+
       LOG=$(mktemp -t coremind-mac)
+      # arm64-only: see the ExpoModulesCore note above — there is no x86_64
+      # Catalyst slice to link against either, so an x86_64 build attempt
+      # fails deterministically, not intermittently. This machine is Apple
+      # Silicon; arm64-only is the correct scope, not a workaround.
       if ! xcodebuild -workspace "$IOS_WS" -scheme "$SCHEME" -configuration Release \
-          -destination "platform=macOS,variant=Designed for iPad" \
-          -derivedDataPath "$DERIVED" -allowProvisioningUpdates build >"$LOG" 2>&1; then
-        echo "[$APP] the macOS (Designed for iPad) build failed — last lines:" >&2
+          -destination "platform=macOS,variant=Mac Catalyst,arch=arm64" \
+          -derivedDataPath "$DERIVED" ARCHS=arm64 \
+          -allowProvisioningUpdates build >"$LOG" 2>&1; then
+        echo "[$APP] the macOS (Mac Catalyst) build failed — last lines:" >&2
         tail -25 "$LOG" >&2; echo "full log: $LOG" >&2; exit 1
       fi
       rm -f "$LOG"
 
-      MACAPP=$(find "$DERIVED/Build/Products" -maxdepth 2 -name "$SCHEME.app" 2>/dev/null | head -1)
-      [ -n "$MACAPP" ] || { echo "[$APP] the build succeeded and produced no $SCHEME.app" >&2; exit 1; }
+      MACAPP="$DERIVED/Build/Products/Release-maccatalyst/$SCHEME.app"
+      [ -d "$MACAPP" ] || { echo "[$APP] the build succeeded and produced no $SCHEME.app" >&2; exit 1; }
       echo "    built: $MACAPP"
-      echo "    NOT installed — proven unlaunchable from a shell (AcctMind's README);"
-      echo "    open $IOS_WS in Xcode, pick My Mac (Designed for iPad), Run"
+      rm -rf "/Applications/$SCHEME.app"
+      cp -R "$MACAPP" /Applications/ \
+        || { echo "[$APP] copying $SCHEME.app into /Applications failed" >&2; exit 1; }
+      echo "    installed: /Applications/$SCHEME.app"
       ;;
     *)
       echo "==> [$APP] macOS desktop bundle"
@@ -160,6 +192,16 @@ if [ "$WANT_MAC" = 1 ]; then
       if [ -f "$ROOT/desktop/smoke.sh" ]; then
         ( cd "$ROOT" && sh desktop/smoke.sh ) || { echo "[$APP] the macOS smoke failed" >&2; exit 1; }
       fi
+      # INSTALL IT. A build sitting in target/release/bundle/macos/ is not a
+      # deploy — nothing had ever put any of these three apps anywhere Sean
+      # would see them. /Applications/<name>.app, replacing whatever build
+      # was there before.
+      rm -rf "/Applications/$(basename "$APPBUNDLE")"
+      cp -R "$APPBUNDLE" /Applications/ \
+        || { echo "[$APP] copying $(basename "$APPBUNDLE") into /Applications failed" >&2; exit 1; }
+      INSTALLED="/Applications/$(basename "$APPBUNDLE")"
+      [ -d "$INSTALLED" ] || { echo "[$APP] copy reported success but $INSTALLED is not there" >&2; exit 1; }
+      echo "    installed: $INSTALLED"
       ;;
   esac
 fi
@@ -322,12 +364,11 @@ if [ "$WANT_ANDROID" = 1 ]; then
   # types with the auto-generated debug keystore (there is no release keystore
   # anywhere in the suite — none has ever been generated), so release installs
   # exactly as easily and is the configuration a real release would use.
-  # GRADLE_USER_HOME stays on the internal disk deliberately: a scratch
-  # volume mounted exFAT (no atomic rename / proper file-locking semantics)
-  # breaks gradle's cache and classpath-instrumentation writes outright —
-  # proven on 2026-08-22, `mkdir` on it succeeds but gradle's directory
-  # creation does not. Xcode's derivedDataPath (BUILD_SCRATCH above) has no
-  # such problem, so that redirect stays; this one doesn't.
+  # GRADLE_USER_HOME stays on the internal disk too, same reasoning as
+  # BUILD_SCRATCH above: a scratch volume mounted exFAT (no atomic rename,
+  # no extended attributes) breaks gradle's cache and classpath-
+  # instrumentation writes outright — proven 2026-08-22, `mkdir` on it
+  # succeeds but gradle's directory creation does not.
   ( cd "$ROOT/$APPDIR/android" && ANDROID_HOME="$ANDROID_HOME" ./gradlew assembleRelease ) \
     || { echo "[$APP] the Android build failed" >&2; exit 1; }
 
