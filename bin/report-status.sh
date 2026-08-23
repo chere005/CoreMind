@@ -42,13 +42,19 @@ host() {
   return 1
 }
 
+# ONE ssh, not three. This was mkdir + scp + chmod as three separate
+# connections, about six seconds all told — which does not matter twice a run
+# and matters a great deal sixty times an hour once the heartbeat exists. It
+# also meant a "sleep 60" loop actually beat every 66 seconds and drifted.
+#
+# The file arrives on STDIN, so there is no scp and no temporary name: the
+# remote shell writes it in one shot with the permissions it needs.
 push_remote() {
   H=$(host) || { echo "  (status: no deploy.conf with a HOST — not reported)" >&2; return 0; }
-  ssh -o BatchMode=yes -o ConnectTimeout=10 "$H" 'mkdir -p /home/protected/status' >/dev/null 2>&1 || {
-    echo "  (status: could not reach the server — not reported)" >&2; return 0; }
-  scp -q -o BatchMode=yes -o ConnectTimeout=10 "$LOCAL" "$H:$REMOTE" >/dev/null 2>&1 || {
-    echo "  (status: the push failed — not reported)" >&2; return 0; }
-  ssh -o BatchMode=yes -o ConnectTimeout=10 "$H" "chmod a+r $REMOTE" >/dev/null 2>&1 || true
+  ssh -o BatchMode=yes -o ConnectTimeout=10 "$H" \
+      "mkdir -p $(dirname "$REMOTE") && cat > $REMOTE && chmod a+r $REMOTE" \
+      < "$LOCAL" >/dev/null 2>&1 \
+    || { echo "  (status: could not reach the server — not reported)" >&2; return 0; }
 }
 
 case "${1:-}" in
