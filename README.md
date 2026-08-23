@@ -36,7 +36,8 @@ tsconfig splits tests out with `"types": []`.
 ```
 canon/            The canonical bytes, laid out exactly as consumers carry
                   them: packages/core (src + test), spec/, app/ (src,
-                  index.ts, tsconfig), tools/, desktop/, tsconfig.base.json.
+                  index.ts, tsconfig), tools/, desktop/, server/,
+                  tsconfig.base.json.
 consumers/*.tsv   One manifest per consumer: mode, canon path, local path,
                   note. Modes: `exact` (byte-identical, drift FAILS the
                   check), `fork` (deliberate divergence, reported), `owed`
@@ -44,6 +45,11 @@ consumers/*.tsv   One manifest per consumer: mode, canon path, local path,
 bin/check-drift.sh  The check. Run it from anywhere; consumers are expected
                   as sibling checkouts (MIND_DIR overrides the parent).
 ```
+
+`canon/server/` is the one non-TypeScript area: PHP mirrored only by the
+consumer that has a server (CalMind). Today it holds `lib/mail.php`, the
+suite's stubbed mail transport — the real SMTP send sits commented out
+beside the stub, and stays commented in canon (see AGENTS.md).
 
 ```sh
 npm install

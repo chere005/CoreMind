@@ -1,5 +1,9 @@
 # Working in CoreMind
 
+The baseline for all of Sean's repos lives in ~/GIT/AgentSuite/AGENTS.md
+and is imported here; this file holds only what is true of THIS repo.
+@../AgentSuite/AGENTS.md
+
 The canonical home of what the Mind-suite apps share. `README.md` is the map
 and the doctrine; this file is how to work in here.
 
@@ -40,15 +44,15 @@ and the doctrine; this file is how to work in here.
   `bin/check-drift.sh`, tag, push, no cascade), `npm run dtp -- all` (every
   repo, core first), or `npm run tdtp -- all --platforms` (test-first, whole
   suite, plus the platform builds no repo's own deploy ships — see
-  Platforms). Tags are bare `x.y.0`, never `v`-prefixed, same as every
-  Mind-suite repo; core's own lane bumps its minor version only on a tag
+  Platforms). Core's own lane bumps its minor version only on a tag
   collision, otherwise it tags whatever `package.json` already says.
 - **`deploy-core.sh` writes over app source and commits nothing.** It refuses
   a dirty consumer (two changes in one diff has no way back), never touches a
   `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
   by name, and runs each touched app's own typecheck and core suite before
   claiming the copy landed.
-- **`main` is the branch.** Stage explicit paths — never `git add -A`.
+- **A live send is a host's config change, never a canon edit.** Canon's mail
+  transport (`canon/server/lib/mail.php`) stays commented out beside the stub.
 
 ## Platforms
 

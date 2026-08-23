@@ -262,9 +262,10 @@ for T in $PLAN; do
       # itself (and needed dependencies) on its own... coremind is to ship all
       # apps simultaneously."
       #
-      # Detected rather than listed, so the day CalMind or AcctMind grows the
-      # same file this stops double-building it with no edit here. ChefMind is
-      # the first and, today, the only one.
+      # Detected rather than listed. ChefMind grew the file first
+      # (2026-08-23, morning); CalMind, AcctMind and MyCalMind grew theirs the
+      # same day — every app ships itself now, and bin/build-platforms.sh
+      # below is the fallback for a checkout that predates that.
       SELF_SHIPS=0
       [ -f "$R/tools/build-platforms.sh" ] && SELF_SHIPS=1
       # --platforms keeps its meaning for a self-shipping app by being passed
