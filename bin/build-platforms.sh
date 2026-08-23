@@ -2,14 +2,18 @@
 # The platforms a release does NOT ship by itself: the macOS desktop bundle,
 # the iOS build on the connected iPhone, and an Android build on an emulator.
 #
-# FOR THE APPS THAT DO NOT YET SHIP THEMSELVES. An app with its own
-# tools/build-platforms.sh owns its artifacts and its lane builds them in the
-# right places — the desktop bundle before the tag, the devices after the push
-# — so bin/dtp.sh passes --platforms through and never calls this for it.
-# ChefMind moved that way on 2026-08-23, after a release tagged and pushed
-# while its Mac bundle stayed a day behind and had never heard of the Pantry
-# tab. This file is the origin those copies come from; CalMind, AcctMind and
-# MyCalMind are still built here.
+# THE FALLBACK, AND THE ORIGIN. An app with its own tools/build-platforms.sh
+# owns its artifacts and its lane builds them in the right places — the desktop
+# bundle before the tag, the devices after the push — so bin/dtp.sh passes
+# --platforms through and never calls this for it. ChefMind moved that way on
+# 2026-08-23, after a release tagged and pushed while its Mac bundle stayed a
+# day behind and had never heard of the Pantry tab; CalMind, AcctMind and
+# MyCalMind moved the same day. ALL FOUR ship themselves now, so dtp calls this
+# for none of them — it runs only for a checkout that predates that change.
+#
+# It is still the origin those four copies came down from, comments and all, so
+# the table below stays complete rather than trimmed to whoever still needs it.
+# A fix learned here is a copy-down into four repos, like packages/core.
 #
 #   sh bin/build-platforms.sh CalMind              all three, for that app
 #   sh bin/build-platforms.sh CalMind --mac        just the desktop bundle
@@ -28,16 +32,20 @@
 # machinery is shared and the differences are a table.
 #
 # MyCalMind's "macOS" is not a Tauri shell — it has no web export for one to
-# stage. The only Mac path for an iOS-only app under a free team is "Designed
-# for iPad" — and AcctMind's README already proved, the hard way, that build
-# is where it ENDS: the product is a `platform 2` (iOS) Mach-O, and macOS's
-# loader refuses to run one from a shell — "incorrect executable format",
-# whether launched with `open` or registered with `lsregister` first. Running
-# one locally is an XCODE GUI ACTION (Product > Destination > My Mac
-# (Designed for iPad) > Run) with no command-line equivalent. So this script
-# BUILDS it and stops; it does not copy anything into /Applications, because
-# what it would copy cannot be opened from there. The table says `catalyst`
-# for that case.
+# stage. It is a REAL Mac Catalyst app: built for
+# `platform=macOS,variant=Mac Catalyst,arch=arm64` and copied into
+# /Applications like every other app's. The table says `catalyst` for it.
+#
+# THE ROUTE NOT TAKEN, recorded because this is the one it looks like from
+# outside. "Designed for iPad" is the other Mac path for an iOS-only app under
+# a free team, and it is a dead end from a script: AcctMind's README proved it
+# the hard way — the product is a `platform 2` (iOS) Mach-O and macOS's loader
+# refuses to run one from a shell, "incorrect executable format", whether
+# launched with `open` or registered with `lsregister` first. Running one is an
+# XCODE GUI ACTION (Product > Destination > My Mac (Designed for iPad) > Run)
+# with no command-line equivalent. Catalyst is what made an installable Mac app
+# possible instead — d26b647, 26 attempts and four distinct causes, handled
+# below and by MyCalMind's own withMacCatalyst config plugin.
 set -e
 cd "$(dirname "$0")/.."
 PARENT="${MIND_DIR:-$(cd .. && pwd)}"
@@ -184,7 +192,12 @@ if [ "$WANT_MAC" = 1 ]; then
       rm -rf "/Applications/$SCHEME.app"
       cp -R "$MACAPP" /Applications/ \
         || { echo "[$APP] copying $SCHEME.app into /Applications failed" >&2; exit 1; }
-      echo "    installed: /Applications/$SCHEME.app"
+      # Checked on disk, not taken on cp's exit status — the same verification
+      # the Tauri branch below does, and what lets AGENTS.md say the copy is
+      # verified for all four rather than for three of them.
+      INSTALLED="/Applications/$SCHEME.app"
+      [ -d "$INSTALLED" ] || { echo "[$APP] copy reported success but $INSTALLED is not there" >&2; exit 1; }
+      echo "    installed: $INSTALLED"
       ;;
     *)
       echo "==> [$APP] macOS desktop bundle"

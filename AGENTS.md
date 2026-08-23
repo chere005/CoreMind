@@ -43,9 +43,20 @@ and the doctrine; this file is how to work in here.
   `npm run dtp -- core` (CoreMind alone — propagate canon,
   `bin/check-drift.sh`, tag, push, no cascade), `npm run dtp -- all` (every
   repo, core first), or `npm run tdtp -- all --platforms` (test-first, whole
-  suite, plus the platform builds no repo's own deploy ships — see
-  Platforms). Core's own lane bumps its minor version only on a tag
-  collision, otherwise it tags whatever `package.json` already says.
+  suite, plus each app's own macOS/iOS/Android builds — the flag is passed
+  through to its lane, see Platforms). Core's own lane bumps its minor version
+  only on a tag collision, otherwise it tags whatever `package.json` says.
+- **The suite's status reporter is this repo's.** `bin/report-status.sh` is
+  what the baseline's "a status failure never fails a release" rule is about:
+  every failure path in it warns on stderr and exits 0, deliberately, and
+  `start` prints its run id even when the push failed because the caller still
+  has a `finish` to make. `bin/dtp.sh` calls it at five points — the start, a
+  beat every minute while a lane is in flight, and three finishes (failed,
+  shipped-with-a-platform-build-down, clean) — and exports `MIND_RUN_ID` so a
+  batch draws ONE card. Sean, 2026-08-23: "there should be one card per tdtp if
+  multiple jobs are triggered in one batch". Every app ships itself now and
+  each lane would otherwise open a run of its own, so the parent's id travels
+  down; a lane that sees it reports nothing and lets the parent's card stand.
 - **`deploy-core.sh` writes over app source and commits nothing.** It refuses
   a dirty consumer (two changes in one diff has no way back), never touches a
   `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
@@ -57,9 +68,25 @@ and the doctrine; this file is how to work in here.
 ## Platforms
 
 CoreMind ships nothing of its own — no server, no app, no platform build; it
-tags itself and stops. What it owns is `bin/build-platforms.sh`, the shared,
-table-driven script that builds the platforms none of the four apps' own
-deploy ships by itself:
+tags itself and stops.
+
+**Platform builds belong to the app, not to this repo.** All four now carry
+their own `tools/build-platforms.sh`, grown the same day on Sean's word —
+2026-08-23, "all apps should have a deploy on their own mechanism inside their
+repo... coremind is to ship all apps simultaneously". So `bin/dtp.sh` DETECTS
+that file rather than listing apps: an app that has it gets `--platforms`
+passed THROUGH to its own lane (and `--web`, meaning the release with no
+platform builds, when the flag is unset), and whatever it builds is credited to
+it. What CoreMind owns here is the ORDER and that pass-through — the artifacts
+are the app's, built where the app's lane wants them: its desktop bundle before
+its tag, its device builds after its push.
+
+`bin/build-platforms.sh` is therefore the **fallback**, run only for an app
+with no `tools/build-platforms.sh` of its own — today, none of the four. It is
+also the ORIGIN those four copies came down from, comments and all (they say
+so in their own headers), which is why it stays complete rather than trimmed to
+whoever still needs it. Its table is what the three lists below describe — not
+what a `dtp --platforms` run executes today:
 
 - **macOS** — a Tauri desktop bundle for CalMind, ChefMind and AcctMind, and
   a real **Mac Catalyst** app for MyCalMind, which has no Tauri shell. All four
@@ -81,8 +108,9 @@ deploy ships by itself:
   INTO that phase by `bin/patch-rndeps-catalyst.js` rather than run before it.
   The patch is idempotent and re-applied on every build, but it is a patch to
   generated output: a fresh `expo prebuild` rewrites the pbxproj and the
-  script has to run again. It does, from here; the thing to know is that
-  nothing upstream has been fixed.
+  script has to run again. It does — from here, and from the verbatim copy at
+  MyCalMind's `tools/patch-rndeps-catalyst.js`, which is the one that actually
+  runs now. The thing to know is that nothing upstream has been fixed.
 - **iOS** — installs to the one physical iPhone via `devicectl`, for CalMind,
   ChefMind, and AcctMind (that phone's free-tier cap is 3 installed apps,
   already spent on those three; CalMind's install also carries its watch
@@ -94,7 +122,9 @@ deploy ships by itself:
   connected hardware), for all four apps: CalMind, ChefMind, AcctMind, and
   MyCalMind.
 
-`--mac` / `--ios` / `--android` select a subset; no flag builds all three.
+`--mac` / `--ios` / `--android` select a subset, `--dry-run` prints the plan
+and stops, and no flag at all builds all three — the same convention all four
+copies use, so a gesture learned here works in any of them.
 Two rules the header states because both were proven the hard way: never run
 two heavy build/device processes at once on this machine — a flaky WebKit
 test under load and an Android emulator crash when gradle and xcodebuild

@@ -20,7 +20,7 @@ mirrors match.
 |---|---|---|
 | [CalMind](https://github.com/chere005/CalMind) | the origin: calendar/reminders/notes/habits/recipes, web+iOS+Android+macOS+watch | everything |
 | [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer, tools, desktop |
-| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer |
+| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer, `tools/sync-lock-versions.mjs` |
 | [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell only |
 
 AcctMind is the deliberate outlier: its core shares zero byte-identical files
@@ -44,6 +44,9 @@ consumers/*.tsv   One manifest per consumer: mode, canon path, local path,
                   (verified lag — the copy-down work list).
 bin/check-drift.sh  The check. Run it from anywhere; consumers are expected
                   as sibling checkouts (MIND_DIR overrides the parent).
+bin/report-status.sh  How a release tells seancheren.com/status about itself:
+                  a start, a beat every minute while a lane runs, a finish.
+                  bin/dtp.sh calls it; it can never fail a release.
 ```
 
 `canon/server/` is the one non-TypeScript area: PHP mirrored only by the
@@ -113,24 +116,40 @@ carry it: no server, no protocol.
 ### Platforms
 
 The release lanes ship the **web** (and dispatch the Windows job in CI). The
-two a release does not ship by itself have their own step:
+three a web release does not ship by itself — **macOS, iOS and Android** — now
+belong to the apps: all four carry their own `tools/build-platforms.sh`, and
+each one's own lane runs it.
 
 ```sh
-sh bin/build-platforms.sh CalMind          # macOS bundle + the connected iPhone
-sh bin/build-platforms.sh ChefMind --ios   # just the phone
-npm run dtp -- all --platforms             # release, then build both per app
+npm run dtp -- all --platforms                         # release each app, platforms and all
+npm run dtp -- all                                     # the web only — the flag is the switch
+(cd ../ChefMind && sh tools/build-platforms.sh --ios)  # one app, one platform, by hand
 ```
 
-It lives here rather than three times over in the apps because a deploy script
-belongs to its app when its DESTINATIONS do — a production document root is
-the one thing that must never be built from a variable — and a device build
-has no destination to get wrong. A platform failure is reported and does not
-un-ship a release that already tagged and pushed, but the run still ends
-non-zero so "it all worked" cannot be read off the exit status.
+**Who builds what is a rule with one home: AGENTS.md's Platforms section.**
+CoreMind owns the ORDER and the pass-through; each app owns its own artifacts.
+`bin/build-platforms.sh` is still here, but as the FALLBACK for a checkout
+predating 2026-08-23 — `npm run dtp` calls it for none of the four today.
 
-**Android is not covered.** No emulator, no signing config and no attached
-device here, so a step for it would be one that has never run — which reads as
-covered and is not.
+The machinery is still shared; it just stopped being one script. Each app's
+copy came down from `bin/build-platforms.sh`, comments and all, the way
+`packages/core` does — because a device build, unlike a production document
+root (the one thing that must never be built from a variable), has no
+destination to get wrong. When the fallback does run, a platform failure is
+reported rather than fatal — the release has already tagged and pushed by then
+— but the run still ends non-zero, so "it all worked" cannot be read off the
+exit status. Inside an app's own lane the split is sharper: the desktop bundle
+is built BEFORE the tag, so a broken one stops the release and the re-run
+reuses the version; the device builds run after the push, where a phone that is
+not plugged in is reported and nothing more.
+
+**Android IS covered**, and has been since 2026-08-22 (`bf571bc`). Every app
+builds `assembleRelease`, installs it, and LAUNCHES it on a reachable device —
+an emulator already running, real hardware, or an AVD booted here when neither
+is — and the step fails unless the process is still up afterwards. Nothing in
+the suite has a release keystore; gradle signs both build types with the
+auto-generated debug one, which is why the release APK installs as easily as a
+debug build would. This paragraph said the opposite until 2026-08-23.
 
 ### Releasing the whole suite
 
@@ -157,8 +176,9 @@ have tagged and pushed two releases, and those do not come back.
 
 Canon is CalMind's copy for every file except where the analysis found a
 strict superset elsewhere: `core/src/recipe.ts` is ChefMind's (it exports
-four helpers for shopping.ts — a no-op for everyone else), and adopting it
-upstream is the current `owed` row on CalMind.
+four helpers for shopping.ts — a no-op for everyone else). Adopting that
+upstream was an `owed` row on CalMind until the superset was promoted into
+canon and copied down; CalMind's row is `exact` now, like every other.
 
 ## What is deliberately NOT here
 
@@ -171,8 +191,10 @@ upstream is the current `owed` row on CalMind.
 - **AcctMind's core and spec** — a re-implementation, documented above.
 - **Deploy scripts and their guard provers** — three genuinely different
   scripts sharing doctrine, not code: per-app destination tables ARE the app.
-- **The server** — CalMind's alone, by design; ChefMind rides it via the
-  sync space.
+- **The server** — still CalMind's alone, by design; ChefMind rides it via the
+  sync space. The exception is the one file the suite's mail doctrine turns
+  on: `server/lib/mail.php` IS canon (see above), mirrored by the single
+  consumer that has a server to mirror it into.
 
 Born 2026-08-22 from a four-repo, hash-verified analysis (every `exact` row
 was byte-compared in every listed repo; the fork and owed notes were

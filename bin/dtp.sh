@@ -9,11 +9,12 @@
 #   sh bin/dtp.sh all --platforms    …and build the platforms too: the macOS
 #                                    bundle and the iOS build on the phone
 #
-# WHERE A PLATFORM BUILD ACTUALLY HAPPENS depends on the app. One carrying its
-# own tools/build-platforms.sh ships itself — this script passes --platforms
-# through to its lane and does not touch it otherwise. The rest are built here
-# afterwards, out of bin/build-platforms.sh, until their repos grow the same
-# file. ChefMind was the first, 2026-08-23.
+# WHERE A PLATFORM BUILD ACTUALLY HAPPENS depends on the app, and that rule has
+# one home now: AGENTS.md's Platforms section. Short version — an app carrying
+# its own tools/build-platforms.sh ships itself and gets --platforms passed
+# through to its lane; bin/build-platforms.sh is the fallback for one that does
+# not, which since 2026-08-23 is none of the four. Detected, not listed: see
+# SELF_SHIPS in the lane below.
 #
 # Each repo's OWN lane does the work — tools/dtp.sh in the four apps, which
 # already bump the minor version, refuse a dirty tree or a non-main branch,
@@ -259,10 +260,31 @@ for T in $PLAN; do
       # the flag would silently stop controlling half the suite.
       LANE_ARGS=""
       if [ "$SELF_SHIPS" = 1 ] && [ "$PLATFORMS" = 0 ]; then LANE_ARGS="--web"; fi
+      # A SELF-SHIPPING LANE ENDS NON-ZERO WHEN A DEVICE BUILD DID NOT FINISH
+      # (2026-08-23) — the release still shipped, tagged and pushed; only the
+      # exit status refuses to call a partial run clean. Under `set -e` that
+      # would abort this batch at the first app with an unplugged phone and
+      # stop every repo after it from shipping at all, which is a far worse
+      # answer than the one the exit code is trying to give. So it is caught:
+      # the lane's verdict is remembered and folded into THIS script's own exit
+      # status at the end, and the remaining repos still run.
+      LANE_RC=0
       if [ "$FULL" = 1 ]; then
-        ( cd "$R" && sh tools/tdtp.sh $LANE_ARGS )
+        ( cd "$R" && sh tools/tdtp.sh $LANE_ARGS ) || LANE_RC=$?
       else
-        ( cd "$R" && sh tools/dtp.sh $LANE_ARGS )
+        ( cd "$R" && sh tools/dtp.sh $LANE_ARGS ) || LANE_RC=$?
+      fi
+      if [ "$LANE_RC" != 0 ]; then
+        # Distinguish "shipped, a device build is owed" from "did not ship".
+        # A lane that failed BEFORE its tag leaves no new tag behind, so the
+        # tag is the evidence, not the exit code.
+        if [ -n "$(git -C "$R" tag --points-at HEAD 2>/dev/null)" ]; then
+          echo "   $T shipped; a platform build did not finish (its lane said so)" >&2
+          PLATFORM_BAD="$PLATFORM_BAD $T"
+        else
+          echo "   $T FAILED before it shipped — stopping the batch" >&2
+          exit "$LANE_RC"
+        fi
       fi
       if [ "$SELF_SHIPS" = 1 ] && [ "$PLATFORMS" = 1 ]; then
         # Its own lane already did them, in the right place: the desktop
