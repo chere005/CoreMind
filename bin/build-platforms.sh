@@ -262,9 +262,13 @@ if [ "$WANT_IOS" = 1 ] && [ "$IOS_INSTALL" = 1 ]; then
   UDID=$(python3 - "$DEVJSON" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
+# tunnelState: a paired phone that is merely idle lists as 'disconnected'
+# until something warms the tunnel, so excluding it skipped the iOS step of
+# CalMind 1.17.0 with the phone sitting right there (2026-08-30). Only
+# 'unavailable' is a genuinely absent device.
 ok = [x['hardwareProperties']['udid'] for x in d.get('result', {}).get('devices', [])
       if x.get('hardwareProperties', {}).get('platform') == 'iOS'
-      and x.get('connectionProperties', {}).get('tunnelState') in ('connected', 'available')
+      and x.get('connectionProperties', {}).get('tunnelState') in ('connected', 'available', 'disconnected')
       and x.get('hardwareProperties', {}).get('udid')]
 print(ok[0] if len(ok) == 1 else '')
 PY
