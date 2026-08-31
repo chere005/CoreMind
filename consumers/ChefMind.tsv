@@ -94,6 +94,7 @@ exact	canon/packages/core/test/rrule.test.ts	packages/core/test/rrule.test.ts
 exact	canon/packages/core/test/rules.test.ts	packages/core/test/rules.test.ts	
 exact	canon/packages/core/test/scalefrac.test.ts	packages/core/test/scalefrac.test.ts	
 exact	canon/packages/core/test/search.test.ts	packages/core/test/search.test.ts	
+exact	canon/packages/core/test/sharesel.test.ts	packages/core/test/sharesel.test.ts	
 exact	canon/packages/core/test/shiftback.test.ts	packages/core/test/shiftback.test.ts	
 exact	canon/packages/core/test/spec.test.ts	packages/core/test/spec.test.ts	
 exact	canon/packages/core/test/sync.test.ts	packages/core/test/sync.test.ts	
@@ -131,7 +132,7 @@ fork	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	differs from canon — de
 fork	canon/packages/core/package.json	packages/core/package.json	differs from canon — deliberate per the analysis
 fork	canon/packages/core/src/meetreq.ts	packages/core/src/meetreq.ts	pre-MeetAvail stub kept for record lockstep
 fork	canon/packages/core/src/normalize.ts	packages/core/src/normalize.ts	deliberate: seed-folder table (gold Shopping, teal Pantry, no calendar/habit starters), folder() flag param, appFolders excludes both flags
-fork	canon/packages/core/src/types.ts	packages/core/src/types.ts	deliberate: Folder.shopping AND Folder.pantry flags, Note.variants + RecipeVariant; ALSO lags MeetAvail — reconcile by hand
+fork	canon/packages/core/src/types.ts	packages/core/src/types.ts	deliberate: Folder.shopping AND Folder.pantry flags, Note.variants + RecipeVariant; ALSO lags MeetAvail — reconcile by hand; share-sel surface (ShareSel, Share.sel, shareOf passthrough, shareSelFor) reconciled 2026-08-31
 fork	canon/packages/core/test/batchlimit.test.ts	packages/core/test/batchlimit.test.ts	no server here: canon carries the app.php-agrees-with-the-contract half, which only CalMind can run
 fork	canon/packages/core/test/normalize.test.ts	packages/core/test/normalize.test.ts	follows normalize.ts fork
 fork	canon/packages/core/test/protocolids.test.ts	packages/core/test/protocolids.test.ts	no server here: canon carries the app.php-agrees-with-the-contract half, which only CalMind can run

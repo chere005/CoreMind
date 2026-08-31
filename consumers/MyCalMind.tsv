@@ -89,6 +89,7 @@ exact	canon/packages/core/test/rrule.test.ts	packages/core/test/rrule.test.ts
 exact	canon/packages/core/test/rules.test.ts	packages/core/test/rules.test.ts	
 exact	canon/packages/core/test/scalefrac.test.ts	packages/core/test/scalefrac.test.ts	
 exact	canon/packages/core/test/search.test.ts	packages/core/test/search.test.ts	
+exact	canon/packages/core/test/sharesel.test.ts	packages/core/test/sharesel.test.ts	
 exact	canon/packages/core/test/shiftback.test.ts	packages/core/test/shiftback.test.ts	
 exact	canon/packages/core/test/spec.test.ts	packages/core/test/spec.test.ts	
 exact	canon/packages/core/test/sync.test.ts	packages/core/test/sync.test.ts	
