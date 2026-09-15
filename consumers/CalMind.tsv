@@ -148,3 +148,5 @@ exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs
 exact	canon/tsconfig.base.json	tsconfig.base.json	
 exact	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	
 exact	canon/server/lib/mail.php	server/lib/mail.php	
+exact	canon/spec/span.json	spec/span.json	
+exact	canon/packages/core/test/dayspan.test.ts	packages/core/test/dayspan.test.ts	

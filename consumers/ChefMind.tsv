@@ -139,3 +139,5 @@ fork	canon/packages/core/test/protocolids.test.ts	packages/core/test/protocolids
 fork	canon/tools/patch-web-html.mjs	tools/patch-web-html.mjs	dist path + app-name strings
 fork	canon/tools/source-digest.mjs	tools/source-digest.mjs	SOURCES path list
 fork	canon/tools/sw.js	tools/sw.js	cache-prefix lines
+exact	canon/spec/span.json	spec/span.json	
+exact	canon/packages/core/test/dayspan.test.ts	packages/core/test/dayspan.test.ts	

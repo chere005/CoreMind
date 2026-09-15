@@ -121,3 +121,5 @@ exact	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts
 exact	canon/packages/core/src/types.ts	packages/core/src/types.ts	
 exact	canon/packages/core/test/gridfuzz.test.ts	packages/core/test/gridfuzz.test.ts	
 exact	canon/packages/core/test/richfuzz.test.ts	packages/core/test/richfuzz.test.ts	
+exact	canon/spec/span.json	spec/span.json	
+exact	canon/packages/core/test/dayspan.test.ts	packages/core/test/dayspan.test.ts	
