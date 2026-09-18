@@ -16,9 +16,12 @@
 # not, which since 2026-08-23 is none of the four. Detected, not listed: see
 # SELF_SHIPS in the lane below.
 #
-# Each repo's OWN lane does the work — tools/dtp.sh in the four apps, which
+# Each repo's OWN lane does the work — tools/dtp.sh in the five apps, which
 # already bump the minor version, refuse a dirty tree or a non-main branch,
-# never tag around a failed deploy, and push atomically. This adds exactly two
+# never tag around a failed deploy, and push atomically. (WriteMind, the
+# macOS-only native app, joined 2026-09-18: it carries no canon, so `core`
+# never cascades into it, and its Mac bundle IS its deploy — its lane takes
+# --web as a no-op rather than as "skip the platform build".) This adds exactly two
 # things: the ORDER (bin/deploy.sh's graph, same edges, same reasons) and the
 # fact that stopping at a failure leaves everything after it unshipped rather
 # than half-shipped in an order nobody chose.
@@ -31,7 +34,7 @@
 set -e
 cd "$(dirname "$0")/.."
 PARENT="${MIND_DIR:-$(cd .. && pwd)}"
-ORDER="core CalMind ChefMind AcctMind MyCalMind"
+ORDER="core CalMind ChefMind AcctMind MyCalMind WriteMind"
 
 downstream_of() {
   case "$1" in
@@ -55,7 +58,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind" >&2; exit 1; }
+[ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind, WriteMind" >&2; exit 1; }
 for T in $WANT; do
   case " $ORDER " in *" $T "*) ;; *) echo "unknown target '$T' — one of: $ORDER" >&2; exit 1 ;; esac
 done

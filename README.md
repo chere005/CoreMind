@@ -22,6 +22,7 @@ mirrors match.
 | [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer, tools, desktop |
 | [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer, `tools/sync-lock-versions.mjs` |
 | [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell only |
+| [WriteMind](https://github.com/chere005/WriteMind) | a macOS-only writing app — markdown notes beside a live camera; native Swift, no web layer | nothing — release lanes only |
 
 AcctMind is the deliberate outlier: its core shares zero byte-identical files
 with the lineage repos (its own `AGENTS.md` forbids importing from them). It
@@ -94,6 +95,14 @@ Both edges are real, not tidy:
   space, and its own deploy REFUSES to ship unless the live API reports that
   space. CalMind must land first. That ordering used to live in somebody's
   memory; it lives in `bin/deploy.sh` now, which is the whole point.
+
+`WriteMind` (since 2026-09-18) is independent too, and further out than
+AcctMind: a native Swift app with no TypeScript and no canon bytes, in the
+suite only for its release lane — `bin/dtp.sh` orders it last, its deploy is
+its own Mac bundle installed at /Applications, and it reports to the status
+page through `bin/report-status.sh` like the rest. There is no
+`consumers/WriteMind.tsv` because there is nothing it carries; a manifest with
+no rows would be a claim the check cannot fail.
 
 `AcctMind` is independent and `MyCalMind` talks to no server at all —
 MyCalMind installs onto a connected iPhone, so it never rides an unattended

@@ -80,7 +80,10 @@ CoreMind ships nothing of its own — no server, no app, no platform build; it
 tags itself and stops.
 
 **Platform builds belong to the app, not to this repo.** All four now carry
-their own `tools/build-platforms.sh`, grown the same day on Sean's word —
+their own `tools/build-platforms.sh` (and WriteMind, the fifth since
+2026-09-18, carries one that knows only `--mac` and REFUSES `--ios` and
+`--android` by name — its Mac bundle is its deploy, so its lane takes `--web`
+as a no-op), grown the same day on Sean's word —
 2026-08-23, "all apps should have a deploy on their own mechanism inside their
 repo... coremind is to ship all apps simultaneously". So `bin/dtp.sh` DETECTS
 that file rather than listing apps: an app that has it gets `--platforms`
