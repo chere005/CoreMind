@@ -289,9 +289,11 @@ for T in $PLAN; do
           exit "$LANE_RC"
         fi
       fi
-      if [ "$SELF_SHIPS" = 1 ] && [ "$PLATFORMS" = 1 ]; then
+      if [ "$SELF_SHIPS" = 1 ] && [ "$PLATFORMS" = 1 ] && [ "$LANE_RC" = 0 ]; then
         # Its own lane already did them, in the right place: the desktop
-        # bundle before its tag, the device builds after its push.
+        # bundle before its tag, the device builds after its push. ONLY when
+        # the lane ended clean — a repo cannot be in both lists, which is
+        # what the 2026-09-18 batch printed for all four of them.
         PLATFORM_OK="$PLATFORM_OK $T"
       fi
       # THE PLATFORMS THE RELEASE DID NOT SHIP. Run AFTER the lane, and its
