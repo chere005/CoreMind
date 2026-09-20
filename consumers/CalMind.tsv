@@ -27,6 +27,7 @@ exact	canon/app/src/components/ToastHost.tsx	apps/app/src/components/ToastHost.t
 exact	canon/app/src/components/ToastHost.web.tsx	apps/app/src/components/ToastHost.web.tsx	
 exact	canon/app/src/components/ocr.ts	apps/app/src/components/ocr.ts	
 exact	canon/app/src/components/rowdrag.ts	apps/app/src/components/rowdrag.ts	
+exact	canon/app/src/components/rowslots.ts	apps/app/src/components/rowslots.ts	
 exact	canon/app/src/components/sectiondrag.ts	apps/app/src/components/sectiondrag.ts	
 exact	canon/app/src/components/swiperow.ts	apps/app/src/components/swiperow.ts	
 exact	canon/app/src/components/tickgrace.ts	apps/app/src/components/tickgrace.ts	
