@@ -96,6 +96,7 @@ exact	canon/packages/core/test/spec.test.ts	packages/core/test/spec.test.ts
 exact	canon/packages/core/test/sync.test.ts	packages/core/test/sync.test.ts	
 exact	canon/packages/core/test/syncloss.test.ts	packages/core/test/syncloss.test.ts	
 exact	canon/packages/core/test/timerange.test.ts	packages/core/test/timerange.test.ts	
+exact	canon/packages/core/test/dayrange.test.ts	packages/core/test/dayrange.test.ts	
 exact	canon/packages/core/test/tinsize.test.ts	packages/core/test/tinsize.test.ts	
 exact	canon/packages/core/test/twotabmerge.test.ts	packages/core/test/twotabmerge.test.ts	
 exact	canon/packages/core/test/undo.test.ts	packages/core/test/undo.test.ts	
