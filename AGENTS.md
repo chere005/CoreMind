@@ -123,13 +123,26 @@ what a `dtp --platforms` run executes today:
   script has to run again. It does — from here, and from the verbatim copy at
   MyCalMind's `tools/patch-rndeps-catalyst.js`, which is the one that actually
   runs now. The thing to know is that nothing upstream has been fixed.
-- **iOS** — installs to the one physical iPhone via `devicectl`, for CalMind,
-  ChefMind, and AcctMind (that phone's free-tier cap is 3 installed apps,
-  already spent on those three; CalMind's install also carries its watch
-  companion app onto a paired Apple Watch when one is reachable). MyCalMind's
-  iOS build is BUILD ONLY — it deliberately does not install, to leave that
-  3rd device slot alone; its own `tools/deploy-device.sh` is the real install
-  path, run only when MyCalMind should occupy the slot.
+- **iOS** — builds once and installs to EVERY phone the app belongs on, via
+  `devicectl`. The table names them per app, because which handsets carry an
+  app is a fact about the app: CalMind goes to all three (Sean's, Autumn's,
+  Patricia's), ChefMind to Sean's and Autumn's, AcctMind to Sean's. Sean,
+  2026-09-21: *"the only apps installed on autumn's phone are ChefMind and
+  CalMind"*, *"patricia's phone only gets CalMind"*. A listed phone that is
+  switched off is skipped with a note, a phone that refuses is warned about,
+  and the step fails only when NONE of them took the app. CalMind's install
+  also carries its watch companion onto a paired Apple Watch when one is
+  reachable.
+
+  There is no per-phone app cap to ration. Apple's free-tier limit of 3 apps
+  on a device does not apply: the team (2LGYTL3FSJ, "Sean Cheren") is PAID,
+  its Xcode-managed profile carrying `TimeToLive 365` where a personal team's
+  carries 7. Sean, 2026-09-21: *"no more caps per phone."* Any note in this
+  repo about freeing a slot describes a constraint that is gone.
+
+  MyCalMind's iOS build is BUILD ONLY and still does not install — not to
+  spare a slot, but because its own `tools/deploy-device.sh` owns its device
+  deploy, and two lanes pushing one app to one phone is how they disagree.
 - **Android** — builds, installs, and launches on a local emulator (or
   connected hardware), for all four apps: CalMind, ChefMind, AcctMind, and
   MyCalMind.
