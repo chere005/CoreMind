@@ -88,7 +88,7 @@ LANE=dtp; [ "$FULL" = 0 ] || LANE=tdtp
 echo "==> $LANE plan:$PLAN"
 [ "$ONLY" = 1 ] && echo "    (--only: downstream cascade suppressed)"
 case " $PLAN " in
-  *" MyCalMind "*) echo "    (MyCalMind builds; its phone install stays the explicit tools/deploy-device.sh)" ;;
+  *" MyCalMind "*) echo "    (MyCalMind installs to Sean's phone like the rest, since 2026-09-21)" ;;
 esac
 
 # ------------------------------------------------------- look before shipping
@@ -119,10 +119,11 @@ done
 # The iPhone pre-flight is GONE (2026-08-23). It guarded the lane MyCalMind
 # used to have — deploy-device.sh installing onto a connected phone, refusing
 # without one, LAST, after everything else had shipped. MyCalMind ships itself
-# now and its lane deliberately never touches a phone: iOS is build-only (an
-# install would spend one of the 3 free-team slots), the phone install is the
-# explicit tools/deploy-device.sh gesture and no release's side effect. A
-# check for hardware nothing in the plan needs was refusing real releases.
+# now, and since 2026-09-21 its lane installs to Sean's phone like every
+# other app — the free-tier cap that kept it off one is gone with the paid
+# team. The pre-flight still does not come back: every lane's iOS step is
+# non-fatal and skips a phone that is not there, so a check for hardware up
+# front can only refuse a release the lane would have completed.
 
 [ "$PLANONLY" = 0 ] || exit 0
 
