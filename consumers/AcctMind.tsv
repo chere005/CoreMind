@@ -2,8 +2,12 @@
 # mode	canon	local	note — see README.md. exact: byte-identical, the check fails on drift.
 exact	canon/desktop/src-tauri/build.rs	desktop/src-tauri/build.rs	
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
+exact	canon/app/src/components/rowslots.ts	packages/core/src/rowslots.ts	
 fork	canon/desktop/package.json	desktop/package.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/src-tauri/src/main.rs	desktop/src-tauri/src/main.rs	differs from canon — deliberate per the analysis
 fork	canon/desktop/src-tauri/tauri.conf.json	desktop/src-tauri/tauri.conf.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/stage-dist.sh	desktop/stage-dist.sh	differs from canon — deliberate per the analysis
+fork	canon/app/src/components/PickBar.tsx	apps/app/src/PickBar.tsx	re-implementation, not a copy: this app has one palette and no themed(), and draws controls at TAP because WebHitSlop is ChefMind's answer to the same no-op hitSlop — same four controls, same order, same two-press Delete, plus the selection's SUM, which is what a ledger picks rows for
+fork	canon/app/src/savefile.ts	apps/app/src/savefile.ts	clipboard, not a share sheet: canon needs expo-file-system and expo-sharing, and two native modules means a prebuild and a fresh binary on the phone before an export works at all — expo-clipboard is already compiled into every build that exists
+fork	canon/app/src/savefile.web.ts	apps/app/src/savefile.web.ts	canon’s Blob-and-anchor, with the media type changed to text/csv and a message returned, because this app’s two halves succeed in visibly different ways and only the caller has somewhere to say so

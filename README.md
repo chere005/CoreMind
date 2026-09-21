@@ -21,14 +21,24 @@ mirrors match.
 | [CalMind](https://github.com/chere005/CalMind) | the origin: calendar/reminders/notes/habits/recipes, web+iOS+Android+macOS+watch | everything |
 | [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer, tools, desktop |
 | [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer, `tools/sync-lock-versions.mjs` |
-| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell only |
+| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; the drop rule; the pick bar, as a fork |
 | [WriteMind](https://github.com/chere005/WriteMind) | a macOS-only writing app — markdown notes beside a live camera; native Swift, no web layer | nothing — release lanes only |
 
-AcctMind is the deliberate outlier: its core shares zero byte-identical files
-with the lineage repos (its own `AGENTS.md` forbids importing from them). It
+AcctMind is the deliberate outlier: its core shared zero byte-identical files
+with the lineage repos until 2026-09-21, when the drag rule
+(`canon/app/src/components/rowslots.ts`) became the first — it imports
+nothing at all, which is what makes it carryable into a core whose tsconfig
+sets `"types": []`; AcctMind keeps it at `packages/core/src/rowslots.ts`
+because that repo's rule is that behaviour lives in core, and the bytes are
+what the manifest checks, not the path. Its own `AGENTS.md` still forbids
+importing from the lineage repos. It
 participates here through the desktop-shell files and
 `tools/sync-lock-versions.mjs` — the one release-lane helper that came out
-identical in all four — and as the named source of ideas worth upstreaming — its `stable()` is CalMind's `canon()`
+identical in all four — through the pick bar as a noted `fork` (Sean,
+2026-09-21: "take the 'selected' behavior from chefmind and implement that
+here... this core behavior should live in CoreMind"; ChefMind is its home and
+carries the canonical bytes, AcctMind re-draws them over a palette that has
+no `themed()` and controls that are drawn at TAP) — and as the named source of ideas worth upstreaming — its `stable()` is CalMind's `canon()`
 with an extra fix, its `patch-web-html` stamps a build.json, its core
 tsconfig splits tests out with `"types": []`.
 
