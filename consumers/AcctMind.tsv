@@ -1,5 +1,5 @@
 # fork: deliberate divergence, reported not failed. owed: verified lag, a copy-down owed.
-# mode	canon	local	note — see README.md. exact: byte-identical, the check fails on drift.
+# mode	canon	local	note — see ARCHITECTURE.md. exact: byte-identical, the check fails on drift.
 exact	canon/desktop/src-tauri/build.rs	desktop/src-tauri/build.rs	
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
 exact	canon/app/src/components/rowslots.ts	packages/core/src/rowslots.ts	

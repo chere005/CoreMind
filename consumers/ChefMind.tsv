@@ -1,5 +1,5 @@
 # fork: deliberate divergence, reported not failed. owed: verified lag, a copy-down owed.
-# mode	canon	local	note — see README.md. exact: byte-identical, the check fails on drift.
+# mode	canon	local	note — see ARCHITECTURE.md. exact: byte-identical, the check fails on drift.
 exact	canon/app/index.ts	app/index.ts	
 exact	canon/app/src/components/BalancedRow.tsx	app/src/components/BalancedRow.tsx	
 exact	canon/app/src/components/CalendarPick.tsx	app/src/components/CalendarPick.tsx	

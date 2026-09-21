@@ -4,8 +4,9 @@ The baseline for all of Sean's repos lives in ~/GIT/AgentSuite/AGENTS.md
 and is imported here; this file holds only what is true of THIS repo.
 @../AgentSuite/AGENTS.md
 
-The canonical home of what the Mind-suite apps share. `README.md` is the map
-and the doctrine; this file is how to work in here.
+The canonical home of what the Mind-suite apps share. `ARCHITECTURE.md` is the
+map and the doctrine (`README.md` is the short front door that links to it);
+this file is how to work in here.
 
 ## Standing rules
 

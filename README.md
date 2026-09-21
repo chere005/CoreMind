@@ -1,224 +1,48 @@
 # CoreMind
 
-The canonical home of everything the Mind-suite apps share, and the check
-that keeps their copies honest.
+Feel free to clone it and copy the canon into your own apps, etc. This repo ships nothing itself.
+
+**This is a personal project to have some fun with claude code, which generated essentially all of the code, and the rest of this readme:**
+
+The canonical home of everything the Mind-suite apps share, and the check that
+keeps their copies honest. It holds the shared bytes once, says exactly who
+mirrors them, and proves the mirrors match.
 
 **This is a reference repo, not a runtime dependency.** Nothing imports it,
-nothing links against it, and it ships to no platform. The suite's doctrine —
-written independently into CalMind's, ChefMind's, MyCalMind's and AcctMind's
-own rules — is that apps CLONE shared code and CHECKS keep the clones in
-lockstep. A shared npm package would force the editions' deliberate seams
-(ChefMind adds shopping, MyCalMind subtracts the server) into config and
-plugin abstractions, add a build step where none exists, and replace
-verifiable bytes with trusted version ranges. So CoreMind does the opposite:
-it holds the bytes once, says exactly who mirrors them, and proves the
-mirrors match.
+nothing links against it, and it ships to no platform. The suite's doctrine is
+that apps CLONE shared code and CHECKS keep the clones in lockstep, so what
+lives here is canonical bytes, a manifest per consumer, and the drift check —
+not a published package. Nothing here is for an end user: the audience is
+whoever, person or agent, is changing a file that more than one app carries.
 
-## The consumers
+Its consumers are [CalMind](https://github.com/chere005/CalMind),
+[ChefMind](https://github.com/chere005/ChefMind),
+[MyCalMind](https://github.com/chere005/MyCalMind) and
+[AcctMind](https://github.com/chere005/AcctMind), with
+[WriteMind](https://github.com/chere005/WriteMind) in the suite for its release
+lane only. They are expected as sibling checkouts of this one; `MIND_DIR`
+overrides the parent directory.
 
-| repo | what it is | shares |
-|---|---|---|
-| [CalMind](https://github.com/chere005/CalMind) | the origin: calendar/reminders/notes/habits/recipes, web+iOS+Android+macOS+watch | everything |
-| [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer, tools, desktop |
-| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer, `tools/sync-lock-versions.mjs` |
-| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; the drop rule; the pick bar, as a fork |
-| [WriteMind](https://github.com/chere005/WriteMind) | a macOS-only writing app — markdown notes beside a live camera; native Swift, no web layer | nothing — release lanes only |
+## Running it
 
-AcctMind is the deliberate outlier: its core shared zero byte-identical files
-with the lineage repos until 2026-09-21, when the drag rule
-(`canon/app/src/components/rowslots.ts`) became the first — it imports
-nothing at all, which is what makes it carryable into a core whose tsconfig
-sets `"types": []`; AcctMind keeps it at `packages/core/src/rowslots.ts`
-because that repo's rule is that behaviour lives in core, and the bytes are
-what the manifest checks, not the path. Its own `AGENTS.md` still forbids
-importing from the lineage repos. It
-participates here through the desktop-shell files and
-`tools/sync-lock-versions.mjs` — the one release-lane helper that came out
-identical in all four — through the pick bar as a noted `fork` (Sean,
-2026-09-21: "take the 'selected' behavior from chefmind and implement that
-here... this core behavior should live in CoreMind"; ChefMind is its home and
-carries the canonical bytes, AcctMind re-draws them over a palette that has
-no `themed()` and controls that are drawn at TAP) — and as the named source of ideas worth upstreaming — its `stable()` is CalMind's `canon()`
-with an extra fix, its `patch-web-html` stamps a build.json, its core
-tsconfig splits tests out with `"types": []`.
-
-## The map
-
-```
-canon/            The canonical bytes, laid out exactly as consumers carry
-                  them: packages/core (src + test), spec/, app/ (src,
-                  index.ts, tsconfig), tools/, desktop/, server/,
-                  tsconfig.base.json.
-consumers/*.tsv   One manifest per consumer: mode, canon path, local path,
-                  note. Modes: `exact` (byte-identical, drift FAILS the
-                  check), `fork` (deliberate divergence, reported), `owed`
-                  (verified lag — the copy-down work list).
-bin/check-drift.sh  The check. Run it from anywhere; consumers are expected
-                  as sibling checkouts (MIND_DIR overrides the parent).
-bin/report-status.sh  How a release tells seancheren.com/status about itself:
-                  a start, a beat every minute while a lane runs, a finish.
-                  bin/dtp.sh calls it; it can never fail a release.
-```
-
-`canon/server/` is the one non-TypeScript area: PHP mirrored only by the
-consumer that has a server (CalMind). Today it holds `lib/mail.php`, the
-suite's stubbed mail transport — the real SMTP send sits commented out
-beside the stub, and stays commented in canon (see AGENTS.md).
+Node and npm; the lanes and the check are plain `/bin/sh`.
 
 ```sh
 npm install
-npm test          # the canon core suite itself: 634 tests, run HERE —
-                  # proving the canonical set is coherent, not just copied
+npm test          # the canon core suite itself: 634 tests, run HERE
 npm run typecheck
 npm run check     # every consumer with a checkout, against canon
 ```
 
-## Deploying
+CoreMind also owns the suite's release ORDER: `npm run dtp -- all` deploys,
+tags and pushes every repo, core first, and `npm run tdtp -- all` puts each
+repo's full test run in front of that.
 
-CoreMind ships to no server and no store, so **deploying core means putting
-the canonical bytes where the consumers carry them** — and then proving the
-apps still pass with them.
+## More
 
-```sh
-npm run deploy:core                  # propagate canon; fix drift
-npm run deploy:core -- --copy-down   # …and land the `owed` lags too
-npm run deploy -- all                # core, then every app, in order
-npm run deploy -- CalMind            # CalMind — and ChefMind, which needs it
-npm run deploy -- --only ChefMind    # that one alone, cascade suppressed
-npm run deploy -- all --plan         # resolve the order and stop
-```
-
-### The dependency graph, and why it cascades
-
-```
-core ──▶ CalMind, ChefMind, MyCalMind, AcctMind
-CalMind ──▶ ChefMind
-```
-
-Both edges are real, not tidy:
-
-- **Canon IS the apps' source.** Shipping core without shipping them leaves
-  the canonical bytes live nowhere, so a core deploy drags the consumers
-  behind it — *only when it actually wrote something*. A propagation that
-  changed nothing redeploys nothing.
-- **ChefMind has no server.** It syncs through CalMind's API in the `chef`
-  space, and its own deploy REFUSES to ship unless the live API reports that
-  space. CalMind must land first. That ordering used to live in somebody's
-  memory; it lives in `bin/deploy.sh` now, which is the whole point.
-
-`WriteMind` (since 2026-09-18) is independent too, and further out than
-AcctMind: a native Swift app with no TypeScript and no canon bytes, in the
-suite only for its release lane — `bin/dtp.sh` orders it last, its deploy is
-its own Mac bundle installed at /Applications, and it reports to the status
-page through `bin/report-status.sh` like the rest. There is no
-`consumers/WriteMind.tsv` because there is nothing it carries; a manifest with
-no rows would be a claim the check cannot fail.
-
-`AcctMind` is independent and `MyCalMind` talks to no server at all —
-MyCalMind installs onto a connected iPhone, so it never rides an unattended
-cascade: name it, or pass `--with-devices` (which `all` implies).
-
-### The protocol contract
-
-`canon/spec/protocol.json` is a contract rather than a copy. Its two terms —
-the record-id pattern and the sync batch limit — used to live only in
-CalMind's `server/lib/app.php`, and were read *out of that PHP* by core tests:
-ChefMind's had to reach across the filesystem into a sibling checkout, and
-skipped themselves when there wasn't one, so on a fresh clone the check that
-keeps ids acceptable to the server did not run at all.
-
-Now both sides assert against the file. CalMind's copy of those tests proves
-`app.php` *and* core agree with it — the server-side direction nothing checked
-before — and every client proves its own constants match. MyCalMind does not
-carry it: no server, no protocol.
-
-### Platforms
-
-The release lanes ship the **web** (and dispatch the Windows job in CI). The
-three a web release does not ship by itself — **macOS, iOS and Android** — now
-belong to the apps: all four carry their own `tools/build-platforms.sh`, and
-each one's own lane runs it.
-
-```sh
-npm run dtp -- all --platforms                         # release each app, platforms and all
-npm run dtp -- all                                     # the web only — the flag is the switch
-(cd ../ChefMind && sh tools/build-platforms.sh --ios)  # one app, one platform, by hand
-```
-
-**Who builds what is a rule with one home: AGENTS.md's Platforms section.**
-CoreMind owns the ORDER and the pass-through; each app owns its own artifacts.
-`bin/build-platforms.sh` is still here, but as the FALLBACK for a checkout
-predating 2026-08-23 — `npm run dtp` calls it for none of the four today.
-
-The machinery is still shared; it just stopped being one script. Each app's
-copy came down from `bin/build-platforms.sh`, comments and all, the way
-`packages/core` does — because a device build, unlike a production document
-root (the one thing that must never be built from a variable), has no
-destination to get wrong. When the fallback does run, a platform failure is
-reported rather than fatal — the release has already tagged and pushed by then
-— but the run still ends non-zero, so "it all worked" cannot be read off the
-exit status. Inside an app's own lane the split is sharper: the desktop bundle
-is built BEFORE the tag, so a broken one stops the release and the re-run
-reuses the version; the device builds run after the push, where a phone that is
-not plugged in is reported and nothing more.
-
-**Android IS covered**, and has been since 2026-08-22 (`bf571bc`). Every app
-builds `assembleRelease`, installs it, and LAUNCHES it on a reachable device —
-an emulator already running, real hardware, or an AVD booted here when neither
-is — and the step fails unless the process is still up afterwards. Nothing in
-the suite has a release keystore; gradle signs both build types with the
-auto-generated debug one, which is why the release APK installs as easily as a
-debug build would. This paragraph said the opposite until 2026-08-23.
-
-### Releasing the whole suite
-
-```sh
-npm run dtp -- all       # deploy, tag, push — every repo, core first
-npm run tdtp -- all      # the same, with the full test run in each lane
-npm run dtp -- CalMind   # CalMind and its downstream
-```
-
-Each repo's own `tools/dtp.sh` does the work; this adds the order and a
-**pre-flight that checks every repo in the plan before the first one ships** —
-a run that stopped at the third repo because it was on a branch would already
-have tagged and pushed two releases, and those do not come back.
-
-## How a shared fix flows
-
-1. The fix lands in **CalMind** (the origin) — or, where another repo's copy
-   is genuinely ahead, it is promoted INTO canon here first.
-2. The same bytes are copied into `canon/` and into each consumer listed for
-   that file — a deliberate act, per repo, exactly as the clones' own
-   "copied down" rule has always worked.
-3. `npm run check` proves the propagation happened. A red `exact` row is
-   drift; an `owed` row is the check keeping score until the copy lands.
-
-Canon is CalMind's copy for every file except where the analysis found a
-strict superset elsewhere: `core/src/recipe.ts` is ChefMind's (it exports
-four helpers for shopping.ts — a no-op for everyone else). Adopting that
-upstream was an `owed` row on CalMind until the superset was promoted into
-canon and copied down; CalMind's row is `exact` now, like every other.
-
-## What is deliberately NOT here
-
-- **Each edition's seams**: `core/src/index.ts` barrels (the export set IS
-  the edition — CalMind's rides along only so the canon suite can run),
-  `store.tsx`, `chrome.tsx`, per-app screens that diverged by design.
-- **Single-owner modules**: ChefMind's `shopping.ts`, MyCalMind's
-  `fetchguard.ts`/`recipefetch.ts`/`peer.ts`, CalMind's request/QuickTick
-  surface.
-- **AcctMind's core and spec** — a re-implementation, documented above.
-- **Deploy scripts and their guard provers** — three genuinely different
-  scripts sharing doctrine, not code: per-app destination tables ARE the app.
-- **The server** — still CalMind's alone, by design; ChefMind rides it via the
-  sync space. The exception is the one file the suite's mail doctrine turns
-  on: `server/lib/mail.php` IS canon (see above), mirrored by the single
-  consumer that has a server to mirror it into.
-
-Born 2026-08-22 from a four-repo, hash-verified analysis (every `exact` row
-was byte-compared in every listed repo; the fork and owed notes were
-spot-diffed). It opened with nine `owed` rows — verified lags the analysis
-found and the check kept score of rather than papering over. All nine have
-since been copied down and promoted to `exact`, so every consumer now
-carries canon everywhere the manifest asks for it: **0 drifted, 0 owed**.
-What remains divergent is `fork`, and every fork row says why.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — the map of the tree, the manifests
+  and their modes, the deploy graph, how each platform ships, and the reasons
+  each of them is the way it is.
+- **[AGENTS.md](AGENTS.md)** — how to work in this repo: the standing rules and
+  the traps.
+- [LICENSE](LICENSE)
