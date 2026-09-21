@@ -1,5 +1,5 @@
 # fork: deliberate divergence, reported not failed. owed: verified lag, a copy-down owed.
-# mode	canon	local	note — see README.md. exact: byte-identical, the check fails on drift.
+# mode	canon	local	note — see ARCHITECTURE.md. exact: byte-identical, the check fails on drift.
 exact	canon/app/index.ts	apps/app/index.ts	
 exact	canon/app/src/Logo.tsx	apps/app/src/Logo.tsx	
 exact	canon/app/src/api.ts	apps/app/src/api.ts	
