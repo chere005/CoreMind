@@ -163,6 +163,70 @@ prebuild_ios() {
   [ -n "$IOS_WS" ] || { echo "[$APP] prebuild produced no xcworkspace" >&2; return 1; }
 }
 
+# ------------------------------------------ an app Sean is looking at NOW
+# 2026-09-21, from Sean: "make sure to reopen already opened apps in a dtp..
+# i was looking at an old acctmind". Both macOS installs below are `rm -rf`
+# then `cp -R`, and doing that under a RUNNING app changes nothing he can
+# see: macOS keeps the old bundle's code mapped for a process that already
+# launched, so the window keeps the JS it started with and the release looks
+# like it did nothing at all. That is how he spent an afternoon reading a
+# stale AcctMind while that same build was live on the web, on his phone and
+# in /Applications. So the install asks first, quits what is open, and puts
+# it back afterwards — which also stops us copying over a live bundle, the
+# other half of what this avoids.
+#
+# DETECTION IS ON THE BUNDLE PATH, never the app name, because the two are
+# not the same string: AcctMind.app runs Contents/MacOS/acctmind-desktop, so
+# `pgrep -x AcctMind` matches nothing and the whole feature silently does
+# nothing forever. $1 is the name as /Applications/<name>.app spells it, and
+# each caller derives it from the same variable its own install uses, so the
+# check and the copy can never disagree about which app this is.
+#
+# NOTHING HERE MAY FAIL A RELEASE. Every step is best effort and leaves the
+# exit status alone: a window that does not come back is a far smaller
+# problem than a lane reporting failure for a release that actually shipped.
+# That is why every call below is written `mac_app_quit ... || true` even
+# though both functions end in `return 0`. This script runs under `set -e`,
+# and errexit reaches INSIDE a function body: one unlucky `echo` or `sleep`
+# returning non-zero would end the release from in here, and the `return 0`
+# at the bottom would never be reached to stop it. Calling the function as
+# part of an || list is what actually suspends errexit for its whole body —
+# the `return 0` only states the intent; the `|| true` enforces it.
+mac_app_is_running() {
+  pgrep -f "/Applications/$1.app/Contents/MacOS/" >/dev/null 2>&1
+}
+
+# Asking, not killing — the same gesture desktop/smoke.sh uses. It stays a
+# request: never escalate to kill -9, because the app in front of him holds
+# the only copy of whatever is unsaved in it and a deploy has no business
+# destroying that. If it is still up after five seconds, say so and install
+# over it anyway; a stale window is a smaller problem than a skipped deploy.
+mac_app_quit() {
+  echo "    $1 is open — quitting it so this build is what he sees next"
+  osascript -e "quit app \"$1\"" >/dev/null 2>&1 || true
+  for _ in 1 2 3 4 5; do
+    mac_app_is_running "$1" || return 0
+    sleep 1
+  done
+  # Look once more before accusing it. The loop checks and THEN sleeps, so
+  # its last look is at four seconds — without this an app that goes during
+  # the fifth second gets the warning below anyway, and the lane log tells
+  # Sean his window survived a release it did not.
+  mac_app_is_running "$1" || return 0
+  echo "[$APP] $1 would not quit — installing over it anyway; its window stays the old build until it is restarted" >&2
+  return 0
+}
+
+# Only ever called for an app that WAS running before this release: one he
+# had closed stays closed, because a deploy has no business conjuring
+# windows onto his desktop.
+mac_app_reopen() {
+  echo "    reopening $1 — it was open before this release"
+  open -a "/Applications/$1.app" >/dev/null 2>&1 \
+    || echo "[$APP] could not reopen $1 — open it yourself; the install itself was fine" >&2
+  return 0
+}
+
 # ------------------------------------------------------------------- macOS
 if [ "$WANT_MAC" = 1 ]; then
   case "$DESKTOP_WS" in
@@ -214,6 +278,15 @@ if [ "$WANT_MAC" = 1 ]; then
       MACAPP="$DERIVED/Build/Products/Release-maccatalyst/$SCHEME.app"
       [ -d "$MACAPP" ] || { echo "[$APP] the build succeeded and produced no $SCHEME.app" >&2; exit 1; }
       echo "    built: $MACAPP"
+      # Is he using it? Asked before the rm -rf and answered again after the
+      # verify — see the mac_app_* notes above for the afternoon that bought
+      # this. $SCHEME is the variable the install itself names the bundle
+      # with, so the check cannot drift from what gets replaced.
+      MAC_WAS_RUNNING=0
+      if mac_app_is_running "$SCHEME"; then
+        MAC_WAS_RUNNING=1
+        mac_app_quit "$SCHEME" || true
+      fi
       rm -rf "/Applications/$SCHEME.app"
       cp -R "$MACAPP" /Applications/ \
         || { echo "[$APP] copying $SCHEME.app into /Applications failed" >&2; exit 1; }
@@ -223,6 +296,10 @@ if [ "$WANT_MAC" = 1 ]; then
       INSTALLED="/Applications/$SCHEME.app"
       [ -d "$INSTALLED" ] || { echo "[$APP] copy reported success but $INSTALLED is not there" >&2; exit 1; }
       echo "    installed: $INSTALLED"
+      # Back the way we found it, and only if we found it that way.
+      if [ "$MAC_WAS_RUNNING" = 1 ]; then
+        mac_app_reopen "$SCHEME" || true
+      fi
       ;;
     *)
       echo "==> [$APP] macOS desktop bundle"
@@ -235,9 +312,38 @@ if [ "$WANT_MAC" = 1 ]; then
       APPBUNDLE=$(ls -d "$ROOT"/desktop/src-tauri/target/release/bundle/macos/*.app 2>/dev/null | head -1)
       [ -n "$APPBUNDLE" ] || { echo "[$APP] the build reported success and produced no .app" >&2; exit 1; }
       echo "    $APPBUNDLE"
+      # Is he using it? Same question as the Catalyst branch above, asked
+      # HERE rather than down beside the rm -rf because desktop/smoke.sh
+      # runs next and quits by app name: it would close his window out from
+      # under the check, and then nothing would know to bring it back.
+      # Asking first also keeps his instance out of the smoke's own pgrep.
+      # $MACNAME is $APPBUNDLE's own basename — the variable the install
+      # uses — so the check and the copy cannot disagree about which app
+      # this is.
+      MACNAME=$(basename "$APPBUNDLE" .app)
+      MAC_WAS_RUNNING=0
+      if mac_app_is_running "$MACNAME"; then
+        MAC_WAS_RUNNING=1
+        mac_app_quit "$MACNAME" || true
+      fi
       # Its own smoke, where the app has one — CalMind and AcctMind do.
       if [ -f "$ROOT/desktop/smoke.sh" ]; then
-        ( cd "$ROOT" && sh desktop/smoke.sh ) || { echo "[$APP] the macOS smoke failed" >&2; exit 1; }
+        # Give him his window back before we stop here. This is the ONLY
+        # failure between the quit above and the reopen below that leaves an
+        # app on disk to reopen — a failed cp or a failed verify has already
+        # rm -rf'd the bundle, so there is nothing to put back and the loud
+        # failure is the whole answer. The smoke is different: it is a
+        # separate build that has stopped a release on a flake before (see
+        # AcctMind's desktop/smoke.sh, 2026-09-19, "it died twice in one
+        # evening"), and the old /Applications copy is still sitting there
+        # intact. Closing his AcctMind and never bringing it back because a
+        # smoke flaked is the same afternoon he asked us to stop — 2026-09-21,
+        # "make sure to reopen already opened apps in a dtp".
+        ( cd "$ROOT" && sh desktop/smoke.sh ) || {
+          echo "[$APP] the macOS smoke failed" >&2
+          if [ "$MAC_WAS_RUNNING" = 1 ]; then mac_app_reopen "$MACNAME" || true; fi
+          exit 1
+        }
       fi
       # INSTALL IT. A build sitting in target/release/bundle/macos/ is not a
       # deploy — nothing had ever put any of these three apps anywhere Sean
@@ -249,6 +355,10 @@ if [ "$WANT_MAC" = 1 ]; then
       INSTALLED="/Applications/$(basename "$APPBUNDLE")"
       [ -d "$INSTALLED" ] || { echo "[$APP] copy reported success but $INSTALLED is not there" >&2; exit 1; }
       echo "    installed: $INSTALLED"
+      # Back the way we found it, and only if we found it that way.
+      if [ "$MAC_WAS_RUNNING" = 1 ]; then
+        mac_app_reopen "$MACNAME" || true
+      fi
       ;;
   esac
 fi
