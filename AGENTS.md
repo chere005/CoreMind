@@ -70,7 +70,10 @@ this file is how to work in here.
   is trying to give. `bin/dtp.sh` catches it: the verdict is folded into
   `PLATFORM_BAD`, the run continues, and this script ends non-zero itself at
   the finish. A lane that failed BEFORE its tag still stops everything — the
-  TAG is the evidence for which happened, never the exit code.
+  TAG is the evidence for which happened, never the exit code. One exit code
+  does decide it: a lane that died of a signal (above 128) was stopped, and
+  stops the batch whatever its tags say — just as a ^C or a TERM aimed at the
+  batch itself ends it, card closed once, dying of that signal.
 - **`deploy-core.sh` writes over app source and commits nothing.** It refuses
   a dirty consumer (two changes in one diff has no way back), never touches a
   `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
