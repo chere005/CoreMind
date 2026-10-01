@@ -29,7 +29,10 @@ this file is how to work in here.
   `exact` to `fork` to make the check green; that is deleting the alarm.
 - **Run all three before committing**: `npm test` (the canon suite — proof
   the canonical set coheres), `npm run typecheck`, and `npm run check`
-  against the sibling checkouts.
+  against the sibling checkouts. A change to `canon/tools/heavy-lock.sh`
+  adds a fourth, `sh bin/check-heavy-lock.sh` (see Platforms) — kept out of
+  `npm test` because it waits out real holds for about two minutes, and the
+  core lane runs `npm test` on every tdtp.
 - **The deploy graph lives in one place: `bin/plan.sh`.** It holds the
   `ORDER`, `downstream_of()` and `resolve_plan`, and both `bin/deploy.sh` and
   `bin/dtp.sh` source it before reading their flags — it is the reason
@@ -152,15 +155,45 @@ what a `dtp --platforms` run executes today:
 `--mac` / `--ios` / `--android` select a subset, `--dry-run` prints the plan
 and stops, and no flag at all builds all three — the same convention all four
 copies use, so a gesture learned here works in any of them.
-Two rules the header states because both were proven the hard way: never run
-two heavy build/device processes at once on this machine — a flaky WebKit
-test under load and an Android emulator crash when gradle and xcodebuild
-overlapped have both actually happened, so serialize. And Xcode's
-`derivedDataPath` for these builds prefers `/Volumes/SPACE` when that scratch
-volume is mounted, while gradle's own cache deliberately stays on the
-internal disk — `/Volumes/SPACE` is exFAT and does not support the atomic
-directory/classpath writes gradle's cache needs (proven by a failed build
-against it).
+
+**Never two heavy builds at once is a lock now, not a rule to remember.** A
+flaky WebKit test under load and an Android emulator crash when gradle and
+xcodebuild overlapped had both happened, every AGENTS.md said "serialize", and
+on 2026-09-30 two sessions broke it anyway — one lane's gradle beside another
+session's xcodebuild, an AcctMind dtp --quick at 1574 s instead of 246. So
+every platform block in `bin/build-platforms.sh` runs inside
+`heavy_lock "<app> <platform>"` … `heavy_unlock`, from
+`canon/tools/heavy-lock.sh`, which every app carries byte for byte as
+`tools/heavy-lock.sh` (adopting it in their own `tools/build-platforms.sh` is
+each app's change). What it does, in short — the file's own comments have the
+why of each:
+
+- a `mkdir` lock at `/tmp/mind-heavy-<uid>.lock` — one per machine user,
+  outside every repo, so every session, checkout and terminal queues on the
+  same one (`$TMPDIR` would not: a sandboxed session gets its own);
+- a block that finds it held WAITS, printing who holds it (repo, step, pid,
+  since when) every 30 s and, under `bin/dtp.sh`, putting the wait on the
+  status card through `MIND_PHASE_FILE`, which the batch exports; after 30
+  minutes (`MIND_HEAVY_WAIT`) it fails the step instead;
+- a holder whose pid is gone — or recycled into another process — is taken
+  over; a lock that cannot be created at all fails at once; a heavy block
+  nested inside another fails at once rather than waiting for itself;
+- it lets go on EXIT, INT and TERM through traps that WRAP the caller's
+  rather than replacing them, so an `exit 1` or a Ctrl-C ends the run exactly
+  as it would have without the lock.
+
+`sh bin/check-heavy-lock.sh` proves all of that under `sh` and `dash`, then
+breaks each guarantee out of a copy and watches the case fail. It uses its
+own lock in a scratch directory (`MIND_HEAVY_LOCK`, which nothing else may
+set), so it never queues behind a real build or blocks one.
+
+Xcode's derivedData and gradle's cache both stay on the internal disk.
+`/Volumes/SPACE` is exFAT, which keeps neither the extended attributes
+codesign needs nor the atomic directory writes gradle's cache needs (each
+proven by a failed build against it; the `BUILD_SCRATCH` note in
+`bin/build-platforms.sh` has the codesign half). This paragraph used to say
+derivedData preferred SPACE when mounted; the script stopped doing that on
+2026-08-22.
 
 ## Traps
 
