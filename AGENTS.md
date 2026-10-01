@@ -43,7 +43,7 @@ this file is how to work in here.
   first. Unlike the apps, there is no default target — pass one after `--`:
   `npm run dtp -- --only core` (CoreMind alone — propagate canon,
   `bin/check-drift.sh`, tag, push; a bare `core` cascades into CalMind,
-  ChefMind and AcctMind like any deploy), `npm run dtp -- all` (every
+  ChefMind and AcctMind like any dtp target), `npm run dtp -- all` (every
   repo, core first), or `npm run tdtp -- all --platforms` (test-first, whole
   suite, plus each app's own macOS/iOS/Android builds — the flag is passed
   through to its lane, see Platforms). Core's own lane bumps its minor version

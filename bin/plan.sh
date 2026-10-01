@@ -11,8 +11,9 @@
 #   core ──▶ CalMind, ChefMind, MyCalMind, AcctMind
 #       Canon IS those repos' source. Change it and their builds change, so
 #       shipping core without shipping them means the canonical bytes are
-#       live nowhere. The cascade fires only when core actually wrote
-#       something — a no-op propagation redeploys nothing.
+#       live nowhere. bin/deploy.sh fires this cascade only when core
+#       actually wrote something; bin/dtp.sh always ships it, because its
+#       core lane refuses a propagation that wrote anything.
 #
 #   CalMind ──▶ ChefMind
 #       ChefMind has no server. It syncs through CalMind's API in the `chef`
