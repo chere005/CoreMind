@@ -127,6 +127,12 @@ export MIND_RUN_ID="$RUN_ID"
 # that can report on a fixed clock is something else running alongside.
 PHASE_FILE="$(pwd)/.status-phase"
 phase() { printf '%s' "$*" > "$PHASE_FILE"; }
+# Exported so a lane waiting deep down for the heavy-build lock
+# (canon/tools/heavy-lock.sh) can say so on this card — otherwise the minute
+# beats would read "CalMind — test run, then deploy…" for however long it
+# waits on another session's xcodebuild. The helper writes it only while it
+# waits and puts this run's phase back after.
+export MIND_PHASE_FILE="$PHASE_FILE"
 phase "starting"
 BEAT_PID=""
 if [ -n "$RUN_ID" ]; then

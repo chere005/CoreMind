@@ -143,6 +143,22 @@ if [ "$DRY" = 1 ]; then
   exit 0
 fi
 
+# ------------------------------------------------------------ one at a time
+# Every platform block below runs under the machine-wide heavy-build lock,
+# canon/tools/heavy-lock.sh (the apps carry the same bytes as
+# tools/heavy-lock.sh). "Never two heavy builds at once" was a rule every
+# AGENTS.md stated and nothing kept: on 2026-09-30 one session's gradle ran
+# beside another's xcodebuild and an AcctMind lane took 1574 s instead of 246.
+# Now a block that finds any other build running — this repo's or an app's,
+# this session's or another's — waits for it, saying whose it is, instead of
+# running beside it.
+#
+# Taken around each BLOCK, because a block is the unit the apps' lanes run one
+# at a time (--mac before the tag, --ios and --android after the push). Let go
+# explicitly at each block's end; every `exit 1` inside one lets go through
+# the helper's EXIT trap, and a kill -9 through the next waiter's takeover.
+. canon/tools/heavy-lock.sh
+
 # --------------------------------------------------------------- the iOS project
 # Shared by the iOS step AND MyCalMind's catalyst step, both of which build
 # out of the SAME generated ios/ directory — prebuilt at most once per run.
@@ -229,6 +245,7 @@ mac_app_reopen() {
 
 # ------------------------------------------------------------------- macOS
 if [ "$WANT_MAC" = 1 ]; then
+  heavy_lock "$APP macOS" || exit 1
   case "$DESKTOP_WS" in
     -)
       echo "==> [$APP] macOS: no desktop shell in this app — skipped"
@@ -361,6 +378,7 @@ if [ "$WANT_MAC" = 1 ]; then
       fi
       ;;
   esac
+  heavy_unlock
 fi
 
 # --------------------------------------------------------------------- iOS
@@ -368,6 +386,7 @@ if [ "$WANT_IOS" = 1 ] && [ "$IOS_INSTALL" = 0 ]; then
   # MyCalMind: prove the iOS build compiles and stop there — see the app
   # table's comment for why nothing here touches the phone.
   echo "==> [$APP] iOS — BUILD ONLY, not installed (its own lane owns the device deploy)"
+  heavy_lock "$APP iOS (build only)" || exit 1
   prebuild_ios || exit 1
   SCHEME=$(basename "$IOS_WS" .xcworkspace)
   DERIVED="$BUILD_SCRATCH/derived-platforms"
@@ -385,10 +404,12 @@ if [ "$WANT_IOS" = 1 ] && [ "$IOS_INSTALL" = 0 ]; then
   echo "    built: $BUNDLE"
   echo "    NOT installed — MyCalMind's device deploy belongs to its own"
   echo "    tools/deploy-device.sh; run that if it should go on the phone"
+  heavy_unlock
 fi
 
 if [ "$WANT_IOS" = 1 ] && [ "$IOS_INSTALL" = 1 ]; then
   echo "==> [$APP] iOS"
+  heavy_lock "$APP iOS" || exit 1
   # IOS_PHONES replaces the app's list wholesale for a one-off run; comments
   # are stripped whichever way it arrived, so a line copied out of the table
   # above keeps working when it is pasted into the environment.
@@ -579,11 +600,13 @@ PY
       echo "      xcrun devicectl device install app --device <watch-udid> \"$WATCHAPP\""
     fi
   fi
+  heavy_unlock
 fi
 
 # ----------------------------------------------------------------- Android
 if [ "$WANT_ANDROID" = 1 ]; then
   echo "==> [$APP] Android"
+  heavy_lock "$APP Android" || exit 1
   export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
   export ANDROID_SDK_ROOT="$ANDROID_HOME"
   export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
@@ -668,4 +691,5 @@ if [ "$WANT_ANDROID" = 1 ]; then
   [ "$RUNNING" = 1 ] \
     || { echo "[$APP] installed and launched but never showed up running" >&2; exit 1; }
   echo "    installed and running: $PKG on $SERIAL"
+  heavy_unlock
 fi

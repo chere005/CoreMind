@@ -25,8 +25,8 @@ exactly who mirrors them, and proves the mirrors match.
 |---|---|---|
 | [CalMind](https://github.com/chere005/CalMind) | the origin: calendar/reminders/notes/habits/recipes, web+iOS+Android+macOS+watch | everything |
 | [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer and its OCR module, tools, desktop |
-| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer and its OCR module, `tools/sync-lock-versions.mjs`, `tools/tdtp.sh` |
-| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; two release helpers; the drop rule and the fold rule; the pick bar, as a fork |
+| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer and its OCR module, `tools/sync-lock-versions.mjs`, `tools/tdtp.sh`, `tools/heavy-lock.sh` |
+| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; three release helpers; the drop rule and the fold rule; the pick bar, as a fork |
 | [WriteMind](https://github.com/chere005/WriteMind) | a macOS-only writing app — markdown notes beside a live camera; native Swift, no web layer | nothing — release lanes only |
 
 ### AcctMind, the deliberate outlier
@@ -41,9 +41,10 @@ sets `"types": []`; AcctMind keeps the drag rule at
 lives in core, and the bytes are what the manifest checks, not the path. Its
 own `AGENTS.md` still forbids importing from the lineage repos.
 
-It participates here through the desktop-shell files and the two release-lane
-helpers all four carry identically — `tools/sync-lock-versions.mjs`, and
-`tools/tdtp.sh` since 2026-09-30 — through the pick bar as a noted `fork` (Sean,
+It participates here through the desktop-shell files and the three release-lane
+helpers all four carry identically — `tools/sync-lock-versions.mjs`,
+`tools/tdtp.sh` since 2026-09-30, and `tools/heavy-lock.sh` since 2026-10-01 —
+through the pick bar as a noted `fork` (Sean,
 2026-09-21: "take the 'selected' behavior from chefmind and implement that
 here... this core behavior should live in CoreMind"; ChefMind is its home and
 carries the canonical bytes, AcctMind re-draws them over a palette that has no
@@ -78,6 +79,9 @@ bin/check-drift.sh  The check. Run it from anywhere; consumers are expected
 bin/report-status.sh  How a release tells seancheren.com/status about itself:
                   a start, a beat every minute while a lane runs, a finish.
                   bin/dtp.sh calls it; it can never fail a release.
+bin/check-heavy-lock.sh  The proofs of canon/tools/heavy-lock.sh, the
+                  machine-wide heavy-build lock: each guarantee shown
+                  holding, then broken out of a copy and shown caught.
 ```
 
 Not all of canon is TypeScript, and the check does not care — it compares
@@ -95,6 +99,7 @@ npm test          # the canon core suite itself, run HERE —
                   # proving the canonical set is coherent, not just copied
 npm run typecheck
 npm run check     # every consumer with a checkout, against canon
+sh bin/check-heavy-lock.sh   # after a change to the heavy-build lock (~2 min)
 ```
 
 ## Deploying
@@ -179,6 +184,20 @@ exit status. Inside an app's own lane the split is sharper: the desktop bundle
 is built BEFORE the tag, so a broken one stops the release and the re-run
 reuses the version; the device builds run after the push, where a phone that is
 not plugged in is reported and nothing more.
+
+**One heavy build at a time is enforced, machine-wide.** Every platform block
+in `bin/build-platforms.sh` — the Mac bundle, the iOS build, the Android build
+— runs under `heavy_lock` from `canon/tools/heavy-lock.sh`, a lock every app
+carries as `tools/heavy-lock.sh` for its own build-platforms.sh to take up.
+It is a directory made with `mkdir`, which is atomic, at one per-user path
+outside every repo, so two sessions, two checkouts or a lane and a hand-run
+build all queue on the same one. A block that finds it held waits and says whose it is,
+on the terminal and on the status card; a holder that died is taken over; a
+wait past 30 minutes fails the step rather than hanging the lane. Overlap is
+what turned a 246 s AcctMind lane into a 1574 s one on 2026-09-30, the night
+two sessions built at once (gradle 95 s → 412 s); waiting for the other build
+costs only its remaining minutes. AGENTS.md's Platforms section has the
+details and the proofs.
 
 **Android IS covered**, and has been since 2026-08-22 (`bf571bc`). Every app
 builds `assembleRelease`, installs it, and LAUNCHES it on a reachable device —

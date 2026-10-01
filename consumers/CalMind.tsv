@@ -157,6 +157,7 @@ exact	canon/app/modules/native-ocr/expo-module.config.json	apps/app/modules/nati
 exact	canon/app/modules/native-ocr/ios/NativeOcr.podspec	apps/app/modules/native-ocr/ios/NativeOcr.podspec	
 exact	canon/app/modules/native-ocr/ios/NativeOcrModule.swift	apps/app/modules/native-ocr/ios/NativeOcrModule.swift	
 exact	canon/tools/tdtp.sh	tools/tdtp.sh	
+exact	canon/tools/heavy-lock.sh	tools/heavy-lock.sh	
 exact	canon/app/src/folds.ts	apps/app/src/folds.ts	
 exact	canon/packages/core/src/folds.ts	packages/core/src/folds.ts	
 exact	canon/packages/core/src/chefdate.ts	packages/core/src/chefdate.ts	
