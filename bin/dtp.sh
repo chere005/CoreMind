@@ -22,9 +22,9 @@
 # macOS-only native app, joined 2026-09-18: it carries no canon, so `core`
 # never cascades into it, and its Mac bundle IS its deploy — its lane takes
 # --web as a no-op rather than as "skip the platform build".) This adds exactly two
-# things: the ORDER (bin/deploy.sh's graph, same edges, same reasons) and the
-# fact that stopping at a failure leaves everything after it unshipped rather
-# than half-shipped in an order nobody chose.
+# things: the ORDER (bin/plan.sh's graph, the one bin/deploy.sh sources too) and
+# the fact that stopping at a failure leaves everything after it unshipped
+# rather than half-shipped in an order nobody chose.
 #
 # CORE's lane is different, because CoreMind ships to no server: it propagates
 # canon into the consumers, proves the drift check is clean, then tags and
@@ -34,15 +34,7 @@
 set -e
 cd "$(dirname "$0")/.."
 PARENT="${MIND_DIR:-$(cd .. && pwd)}"
-ORDER="core CalMind ChefMind AcctMind MyCalMind WriteMind"
-
-downstream_of() {
-  case "$1" in
-    core)    echo "CalMind ChefMind AcctMind MyCalMind" ;;
-    CalMind) echo "ChefMind" ;;
-    *)       echo "" ;;
-  esac
-}
+. bin/plan.sh
 
 FULL=0; ONLY=0; PLANONLY=0; DEVICES=0; PLATFORMS=0; WANT=""
 while [ $# -gt 0 ]; do
@@ -58,31 +50,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind, WriteMind" >&2; exit 1; }
-for T in $WANT; do
-  case " $ORDER " in *" $T "*) ;; *) echo "unknown target '$T' — one of: $ORDER" >&2; exit 1 ;; esac
-done
-
-SET="$WANT"
-if [ "$ONLY" = 0 ]; then
-  for _ in 1 2 3; do
-    for T in $SET; do
-      for D in $(downstream_of "$T"); do
-        case " $SET " in *" $D "*) ;; *) SET="$SET $D" ;; esac
-      done
-    done
-  done
-fi
-
-PLAN=""
-for T in $ORDER; do
-  case " $SET " in *" $T "*) ;; *) continue ;; esac
-  if [ "$T" = "MyCalMind" ] && [ "$DEVICES" = 0 ]; then
-    case " $WANT " in *" MyCalMind "*) ;; *) continue ;; esac
-  fi
-  PLAN="$PLAN $T"
-done
-[ -n "$PLAN" ] || { echo "nothing to do" >&2; exit 1; }
+resolve_plan
 
 LANE=dtp; [ "$FULL" = 0 ] || LANE=tdtp
 echo "==> $LANE plan:$PLAN"

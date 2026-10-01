@@ -91,7 +91,7 @@ the stub, and stays commented in canon (see AGENTS.md).
 
 ```sh
 npm install
-npm test          # the canon core suite itself: 634 tests, run HERE —
+npm test          # the canon core suite itself, run HERE —
                   # proving the canonical set is coherent, not just copied
 npm run typecheck
 npm run check     # every consumer with a checkout, against canon
@@ -128,7 +128,8 @@ Both edges are real, not tidy:
 - **ChefMind has no server.** It syncs through CalMind's API in the `chef`
   space, and its own deploy REFUSES to ship unless the live API reports that
   space. CalMind must land first. That ordering used to live in somebody's
-  memory; it lives in `bin/deploy.sh` now, which is the whole point.
+  memory; it lives in `bin/plan.sh` now, which `bin/deploy.sh` and
+  `bin/dtp.sh` both source — and that is the whole point.
 
 `AcctMind` is independent and `MyCalMind` talks to no server at all —
 MyCalMind installs onto a connected iPhone, so it never rides an unattended

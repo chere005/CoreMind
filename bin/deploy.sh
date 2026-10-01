@@ -8,24 +8,8 @@
 #   sh bin/deploy.sh all --dry-run       every step, writing nothing
 #   sh bin/deploy.sh all --plan          resolve the order and stop
 #
-# THE GRAPH, and why each edge is real rather than tidy:
-#
-#   core ──▶ CalMind, ChefMind, MyCalMind, AcctMind
-#       Canon IS those repos' source. Change it and their builds change, so
-#       shipping core without shipping them means the canonical bytes are
-#       live nowhere. The cascade fires only when core actually wrote
-#       something — a no-op propagation redeploys nothing.
-#
-#   CalMind ──▶ ChefMind
-#       ChefMind has no server. It syncs through CalMind's API in the `chef`
-#       space, and its own deploy REFUSES to ship unless the live API reports
-#       that space. So CalMind's server must land first; ChefMind following
-#       it automatically is the whole reason this ordering is in a script
-#       instead of in somebody's memory.
-#
-# Nothing else has an edge: AcctMind is independent, MyCalMind talks to no
-# server at all, and WriteMind (2026-09-18) is a native macOS app that
-# carries no canon — its deploy is its Mac bundle, installed locally.
+# THE GRAPH — its edges, and why each one is real rather than tidy — lives in
+# bin/plan.sh, which this script and bin/dtp.sh both source.
 #
 # Flags: --quick (the fast gates where an app has them) · --dry-run
 #        --only <target> (no cascade) · --copy-down (core: land the owed lags)
@@ -33,19 +17,7 @@
 set -e
 cd "$(dirname "$0")/.."
 PARENT="${MIND_DIR:-$(cd .. && pwd)}"
-
-# Deployment order for the whole suite. Every run is a subset of this list, in
-# this sequence — so a cascade can never reorder itself into shipping ChefMind
-# before the API it checks.
-ORDER="core CalMind ChefMind AcctMind MyCalMind WriteMind"
-
-downstream_of() {
-  case "$1" in
-    core)    echo "CalMind ChefMind AcctMind MyCalMind" ;;
-    CalMind) echo "ChefMind" ;;
-    *)       echo "" ;;
-  esac
-}
+. bin/plan.sh
 
 QUICK=""; DRY=0; ONLY=0; COPYDOWN=""; DEVICES=0; PLANONLY=0; WANT=""
 while [ $# -gt 0 ]; do
@@ -65,46 +37,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind, WriteMind" >&2; exit 1; }
-
-for T in $WANT; do
-  case " $ORDER " in
-    *" $T "*) ;;
-    *) echo "unknown target '$T' — one of: $ORDER" >&2; exit 1 ;;
-  esac
-done
-
-# ------------------------------------------------------------- the closure
-# --only suppresses the cascade; otherwise every target drags its downstream
-# in. Resolved BEFORE anything ships, so the plan can be printed and read.
-SET="$WANT"
-if [ "$ONLY" = 0 ]; then
-  # One pass per node in dependency order is enough for a graph two deep, and
-  # a fixed number of passes cannot loop for ever if an edge is ever added.
-  for _ in 1 2 3; do
-    for T in $SET; do
-      for D in $(downstream_of "$T"); do
-        case " $SET " in *" $D "*) ;; *) SET="$SET $D" ;; esac
-      done
-    done
-  done
-fi
-
-PLAN=""
-for T in $ORDER; do
-  case " $SET " in *" $T "*) ;; *) continue ;; esac
-  # MyCalMind installs onto a phone, so it cannot ride an unattended cascade —
-  # it is left out unless it was NAMED, or --with-devices (which `all` implies)
-  # said so. Naming a target IS the consent; only the cascade needs the flag.
-  if [ "$T" = "MyCalMind" ] && [ "$DEVICES" = 0 ]; then
-    case " $WANT " in
-      *" MyCalMind "*) ;;
-      *) continue ;;
-    esac
-  fi
-  PLAN="$PLAN $T"
-done
-[ -n "$PLAN" ] || { echo "nothing to do" >&2; exit 1; }
+resolve_plan
 
 echo "==> plan:$PLAN"
 [ "$ONLY" = 1 ] && echo "    (--only: downstream cascade suppressed)"

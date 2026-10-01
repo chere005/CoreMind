@@ -27,22 +27,23 @@ this file is how to work in here.
   `exact` when it lands); `fork` rows are deliberate divergences whose note
   says why. A row's mode is a claim about intent — never demote a failing
   `exact` to `fork` to make the check green; that is deleting the alarm.
-- **Run all three before committing**: `npm test` (the canon suite, 634
-  tests — proof the canonical set coheres), `npm run typecheck`, and
-  `npm run check` against the sibling checkouts.
-- **The deploy graph lives in one place.** `bin/deploy.sh` and `bin/dtp.sh`
-  each carry the same `downstream_of()` and the same `ORDER`, and both are
-  the reason ChefMind cannot ship before the API it checks. Add an edge to
-  one and add it to the other in the same commit — two graphs that disagree
-  is worse than the memory this replaced. A deploy CASCADES by default;
-  `--only` is the way to ship one thing.
+- **Run all three before committing**: `npm test` (the canon suite — proof
+  the canonical set coheres), `npm run typecheck`, and `npm run check`
+  against the sibling checkouts.
+- **The deploy graph lives in one place: `bin/plan.sh`.** It holds the
+  `ORDER`, `downstream_of()` and `resolve_plan`, and both `bin/deploy.sh` and
+  `bin/dtp.sh` source it before reading their flags — it is the reason
+  ChefMind cannot ship before the API it checks, and an edge added there is
+  added to both. A deploy CASCADES by default; `--only` is the way to ship
+  one thing.
 - **`npm run dtp` / `npm run tdtp` wrap `bin/dtp.sh`, the suite orchestrator
   this repo owns** — not a per-repo release script like the four apps have.
   dtp deploys, tags, and pushes each targeted repo's own lane, in
-  `bin/deploy.sh`'s order; tdtp (`--full`) runs each repo's own test suite
+  `bin/plan.sh`'s order; tdtp (`--full`) runs each repo's own test suite
   first. Unlike the apps, there is no default target — pass one after `--`:
-  `npm run dtp -- core` (CoreMind alone — propagate canon,
-  `bin/check-drift.sh`, tag, push, no cascade), `npm run dtp -- all` (every
+  `npm run dtp -- --only core` (CoreMind alone — propagate canon,
+  `bin/check-drift.sh`, tag, push; a bare `core` cascades into CalMind,
+  ChefMind and AcctMind like any deploy), `npm run dtp -- all` (every
   repo, core first), or `npm run tdtp -- all --platforms` (test-first, whole
   suite, plus each app's own macOS/iOS/Android builds — the flag is passed
   through to its lane, see Platforms). Core's own lane bumps its minor version
@@ -169,8 +170,9 @@ against it).
   ways that name neither file.
 - **The two server-protocol tests are excluded from the canon run**
   (vitest.canon.config.mts): canon carries CalMind's copies, which read the
-  server out of CalMind's own tree. They still run in CalMind and ChefMind;
-  the exclusion here loses nothing that was ever covered here.
+  server out of CalMind's own tree. Their app.php half runs only in CalMind;
+  ChefMind carries fork copies that assert the protocol.json half alone. The
+  exclusion here loses nothing that was ever covered here.
 - **vitest.canon.config.mts lives OUTSIDE canon/ deliberately** — canon
   holds only bytes some consumer carries, and no consumer has this config.
 - **The check's default parent is the sibling directory.** Working from a
