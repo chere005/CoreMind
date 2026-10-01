@@ -1,7 +1,6 @@
 # fork: deliberate divergence, reported not failed. owed: verified lag, a copy-down owed.
 # mode	canon	local	note — see ARCHITECTURE.md. exact: byte-identical, the check fails on drift.
 exact	canon/app/index.ts	app/index.ts	
-exact	canon/app/src/Logo.tsx	app/src/Logo.tsx	
 exact	canon/app/src/components/BalancedRow.tsx	app/src/components/BalancedRow.tsx	
 exact	canon/app/src/components/Chevron.tsx	app/src/components/Chevron.tsx	
 exact	canon/app/src/components/DayPick.tsx	app/src/components/DayPick.tsx	
@@ -113,6 +112,7 @@ exact	canon/spec/sort.json	spec/sort.json
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
 exact	canon/tsconfig.base.json	tsconfig.base.json	
 fork	canon/app/src/components/SyncDot.tsx	app/src/components/SyncDot.tsx	deliberate: offline/syncing branches deleted — there is no server
+fork	canon/app/src/screens/RecipeEditor.tsx	app/src/screens/RecipeEditor.tsx	deliberate: the link import fetches on-device through src/recipefetch.ts (no server, no session), with url keyboard props and an 8s error hold, plus the t→cur rename; ALSO lags canon's RichText rows and badge-owned ingLine spacing (CalMind 9931f8e, 2026-08-21) — reconcile by hand
 fork	canon/packages/core/package.json	packages/core/package.json	version field only (each edition numbers its own core)
 exact	canon/app/src/components/CalendarPick.tsx	app/src/components/CalendarPick.tsx	
 exact	canon/app/src/components/IngredientBadge.tsx	app/src/components/IngredientBadge.tsx	
@@ -125,3 +125,12 @@ exact	canon/packages/core/test/gridfuzz.test.ts	packages/core/test/gridfuzz.test
 exact	canon/packages/core/test/richfuzz.test.ts	packages/core/test/richfuzz.test.ts	
 exact	canon/spec/span.json	spec/span.json	
 exact	canon/packages/core/test/dayspan.test.ts	packages/core/test/dayspan.test.ts	
+exact	canon/app/modules/native-ocr/expo-module.config.json	app/modules/native-ocr/expo-module.config.json	
+exact	canon/app/modules/native-ocr/ios/NativeOcr.podspec	app/modules/native-ocr/ios/NativeOcr.podspec	
+exact	canon/app/modules/native-ocr/ios/NativeOcrModule.swift	app/modules/native-ocr/ios/NativeOcrModule.swift	
+exact	canon/tools/tdtp.sh	tools/tdtp.sh	
+exact	canon/app/src/folds.ts	app/src/folds.ts	
+exact	canon/packages/core/src/folds.ts	packages/core/src/folds.ts	
+exact	canon/packages/core/src/chefdate.ts	packages/core/src/chefdate.ts	
+exact	canon/packages/core/test/folds.test.ts	packages/core/test/folds.test.ts	
+exact	canon/packages/core/test/chefdate.test.ts	packages/core/test/chefdate.test.ts	

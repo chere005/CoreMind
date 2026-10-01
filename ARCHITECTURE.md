@@ -24,24 +24,26 @@ exactly who mirrors them, and proves the mirrors match.
 | repo | what it is | shares |
 |---|---|---|
 | [CalMind](https://github.com/chere005/CalMind) | the origin: calendar/reminders/notes/habits/recipes, web+iOS+Android+macOS+watch | everything |
-| [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer, tools, desktop |
-| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer, `tools/sync-lock-versions.mjs` |
-| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; the drop rule; the pick bar, as a fork |
+| [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer and its OCR module, tools, desktop |
+| [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer and its OCR module, `tools/sync-lock-versions.mjs`, `tools/tdtp.sh` |
+| [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; two release helpers; the drop rule and the fold rule; the pick bar, as a fork |
 | [WriteMind](https://github.com/chere005/WriteMind) | a macOS-only writing app — markdown notes beside a live camera; native Swift, no web layer | nothing — release lanes only |
 
 ### AcctMind, the deliberate outlier
 
-AcctMind's core shared zero byte-identical files with the lineage repos until
-2026-09-21, when the drag rule (`canon/app/src/components/rowslots.ts`) became
-the first — it imports nothing at all, which is what makes it carryable into a
-core whose tsconfig sets `"types": []`; AcctMind keeps it at
+AcctMind's core carries two of canon's rules byte for byte: the fold rule
+(`canon/packages/core/src/folds.ts`, with its test), identical since
+2026-09-18 though the manifest named it only on 2026-09-30, and the drag rule
+(`canon/app/src/components/rowslots.ts`), since 2026-09-21. Both import
+nothing at all, which is what makes them carryable into a core whose tsconfig
+sets `"types": []`; AcctMind keeps the drag rule at
 `packages/core/src/rowslots.ts` because that repo's rule is that behaviour
 lives in core, and the bytes are what the manifest checks, not the path. Its
 own `AGENTS.md` still forbids importing from the lineage repos.
 
-It participates here through the desktop-shell files and
-`tools/sync-lock-versions.mjs` — the one release-lane helper that came out
-identical in all four — through the pick bar as a noted `fork` (Sean,
+It participates here through the desktop-shell files and the two release-lane
+helpers all four carry identically — `tools/sync-lock-versions.mjs`, and
+`tools/tdtp.sh` since 2026-09-30 — through the pick bar as a noted `fork` (Sean,
 2026-09-21: "take the 'selected' behavior from chefmind and implement that
 here... this core behavior should live in CoreMind"; ChefMind is its home and
 carries the canonical bytes, AcctMind re-draws them over a palette that has no
@@ -64,8 +66,8 @@ no rows would be a claim the check cannot fail.
 
 ```
 canon/            The canonical bytes, laid out exactly as consumers carry
-                  them: packages/core (src + test), spec/, app/ (src,
-                  index.ts, tsconfig), tools/, desktop/, server/,
+                  them: packages/core (src + test), spec/, app/ (src, test,
+                  modules, index.ts, tsconfig), tools/, desktop/, server/,
                   tsconfig.base.json.
 consumers/*.tsv   One manifest per consumer: mode, canon path, local path,
                   note. Modes: `exact` (byte-identical, drift FAILS the
@@ -78,7 +80,9 @@ bin/report-status.sh  How a release tells seancheren.com/status about itself:
                   bin/dtp.sh calls it; it can never fail a release.
 ```
 
-`canon/server/` is the one non-TypeScript area: PHP mirrored only by the
+Not all of canon is TypeScript, and the check does not care — it compares
+bytes: `desktop/` is the Tauri shell's Rust and config, `app/modules/native-ocr/`
+is the OCR module's Swift half, and `canon/server/` is PHP mirrored only by the
 consumer that has a server (CalMind). Today it holds `lib/mail.php`, the
 suite's stubbed mail transport — the real SMTP send sits commented out beside
 the stub, and stays commented in canon (see AGENTS.md).
