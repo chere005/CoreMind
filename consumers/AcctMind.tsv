@@ -3,6 +3,9 @@
 exact	canon/desktop/src-tauri/build.rs	desktop/src-tauri/build.rs	
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
 exact	canon/app/src/components/rowslots.ts	packages/core/src/rowslots.ts	
+exact	canon/packages/core/src/folds.ts	packages/core/src/folds.ts	
+exact	canon/packages/core/test/folds.test.ts	packages/core/test/folds.test.ts	
+exact	canon/tools/tdtp.sh	tools/tdtp.sh	
 fork	canon/desktop/package.json	desktop/package.json	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/src-tauri/Cargo.toml	desktop/src-tauri/Cargo.toml	carries this app's own name and VERSION, which its release lane rewrites every ship — canon holds the shape, never the numbers
 fork	canon/desktop/src-tauri/src/main.rs	desktop/src-tauri/src/main.rs	differs from canon — deliberate per the analysis

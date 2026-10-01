@@ -152,3 +152,13 @@ exact	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts
 exact	canon/server/lib/mail.php	server/lib/mail.php	
 exact	canon/spec/span.json	spec/span.json	
 exact	canon/packages/core/test/dayspan.test.ts	packages/core/test/dayspan.test.ts	
+exact	canon/app/test/rowslots.test.ts	apps/app/test/rowslots.test.ts	
+exact	canon/app/modules/native-ocr/expo-module.config.json	apps/app/modules/native-ocr/expo-module.config.json	
+exact	canon/app/modules/native-ocr/ios/NativeOcr.podspec	apps/app/modules/native-ocr/ios/NativeOcr.podspec	
+exact	canon/app/modules/native-ocr/ios/NativeOcrModule.swift	apps/app/modules/native-ocr/ios/NativeOcrModule.swift	
+exact	canon/tools/tdtp.sh	tools/tdtp.sh	
+exact	canon/app/src/folds.ts	apps/app/src/folds.ts	
+exact	canon/packages/core/src/folds.ts	packages/core/src/folds.ts	
+exact	canon/packages/core/src/chefdate.ts	packages/core/src/chefdate.ts	
+exact	canon/packages/core/test/folds.test.ts	packages/core/test/folds.test.ts	
+exact	canon/packages/core/test/chefdate.test.ts	packages/core/test/chefdate.test.ts	
