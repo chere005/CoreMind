@@ -154,15 +154,33 @@ stop_beat() {
 
 report_fail() {
   stop_beat
-  [ -n "$RUN_ID" ] || return 0
+  # EXACTLY ONCE: REPORT_DONE goes to 1 BEFORE the reporter runs, so the EXIT
+  # after a signal, a second ^C while this finish is still pushing, and the
+  # foot of the run all find the card already closed.
+  [ -n "$RUN_ID" ] && [ "$REPORT_DONE" != 1 ] || return 0
+  REPORT_DONE=1
   sh bin/report-status.sh finish "$RUN_ID" failed 3 \
     "Stopped during $(cat "$PHASE_FILE" 2>/dev/null || echo "$PLAN"). Nothing after the failure was shipped; what ran before it was." 2>/dev/null || true
   RUN_ID=""
+  return 0
 }
 # The beat is killed on EVERY exit path, including the ones nobody wrote a
 # handler for: a loop left running after the shell dies would keep a finished
 # run painted purple until the next reboot.
-trap report_fail EXIT INT TERM
+#
+# AND A CTRL-C MUST END THE BATCH. This was one trap for EXIT, INT and TERM,
+# and a signal trap that returns RESUMES the script: ^C during CalMind's iOS
+# build closed the card `failed`, the loop read the tag at CalMind's HEAD as
+# "shipped, a platform build did not finish", and went straight on to deploy,
+# tag and push AcctMind (found 2026-10-01; under TERM the batch ran to "dtp
+# complete" and exit 0 under a failed card). So INT and TERM close the card
+# and then die of their own signal, as the app lanes' and
+# tools/heavy-lock.sh's handlers do — `exit 130` would read to a caller as a
+# child that handled the ^C, and it would carry on.
+REPORT_DONE=0
+trap 'report_fail' EXIT
+trap 'report_fail; trap - EXIT INT; kill -s INT $$; exit 130' INT
+trap 'report_fail; trap - EXIT TERM; kill -s TERM $$; exit 143' TERM
 
 PLATFORM_OK=""; PLATFORM_BAD=""
 for T in $PLAN; do
@@ -253,6 +271,17 @@ for T in $PLAN; do
         ( cd "$R" && sh tools/dtp.sh $LANE_ARGS ) || LANE_RC=$?
       fi
       if [ "$LANE_RC" != 0 ]; then
+        # A LANE THAT WAS STOPPED did not ship with a build owed, whatever its
+        # tags say. Above 128 is death by a signal (128+n) — the lane killed
+        # on its own, so this shell never saw the signal and its trap never
+        # fired. Read by the tag below, a lane stopped in its device builds
+        # was "shipped, a platform build did not finish" and the batch went on
+        # to the next repo (found 2026-10-01). A lane owing a device build
+        # ends 1.
+        if [ "$LANE_RC" -gt 128 ]; then
+          echo "   $T was stopped by a signal (status $LANE_RC) — stopping the batch" >&2
+          exit "$LANE_RC"
+        fi
         # Distinguish "shipped, a device build is owed" from "did not ship".
         # A lane that failed BEFORE its tag leaves no new tag behind, so the
         # tag is the evidence, not the exit code.
@@ -301,6 +330,7 @@ fi
 # build, which is a thing to go and look at rather than a thing that is broken
 # for anybody using the apps.
 stop_beat
+REPORT_DONE=1
 if [ -n "$RUN_ID" ]; then
   SUM="Shipped$PLAN."
   [ -z "$PLATFORM_OK" ] || SUM="$SUM Platforms built:$PLATFORM_OK."
