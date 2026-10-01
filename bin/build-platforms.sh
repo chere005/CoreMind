@@ -144,14 +144,16 @@ if [ "$DRY" = 1 ]; then
 fi
 
 # ------------------------------------------------------------ one at a time
-# Every platform block below runs under the machine-wide heavy-build lock,
+# Every platform block below runs under the heavy-build lock,
 # canon/tools/heavy-lock.sh (the apps carry the same bytes as
 # tools/heavy-lock.sh). "Never two heavy builds at once" was a rule every
 # AGENTS.md stated and nothing kept: on 2026-09-30 one session's gradle ran
 # beside another's xcodebuild and an AcctMind lane took 1574 s instead of 246.
-# Now a block that finds any other build running — this repo's or an app's,
-# this session's or another's — waits for it, saying whose it is, instead of
-# running beside it.
+# Now a block that finds another build holding the lock — this repo's or an
+# app's, this session's or another's — waits for it, saying whose it is,
+# instead of running beside it. A build that never takes the lock is not seen
+# at all: WriteMind's and WriteMindCross's, the TestMindSuite forks', an
+# xcodebuild, gradle or cargo typed by hand, a build from Xcode's own window.
 #
 # Taken around each BLOCK, because a block is the unit the apps' lanes run one
 # at a time (--mac before the tag, --ios and --android after the push). Let go
@@ -356,7 +358,13 @@ if [ "$WANT_MAC" = 1 ]; then
         # intact. Closing his AcctMind and never bringing it back because a
         # smoke flaked is the same afternoon he asked us to stop — 2026-09-21,
         # "make sure to reopen already opened apps in a dtp".
-        ( cd "$ROOT" && sh desktop/smoke.sh ) || {
+        #
+        # --no-build: the smoke checks the bundle built just above, the one
+        # installed below, instead of compiling the shell a second time. It is
+        # also what lets it run here at all: a BUILDING smoke takes the
+        # heavy-build lock this block already holds, and is refused as a
+        # nested heavy block. CalMind's and AcctMind's smokes both take it.
+        ( cd "$ROOT" && sh desktop/smoke.sh --no-build ) || {
           echo "[$APP] the macOS smoke failed" >&2
           if [ "$MAC_WAS_RUNNING" = 1 ]; then mac_app_reopen "$MACNAME" || true; fi
           exit 1

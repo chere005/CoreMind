@@ -80,8 +80,8 @@ bin/report-status.sh  How a release tells seancheren.com/status about itself:
                   a start, a beat every minute while a lane runs, a finish.
                   bin/dtp.sh calls it; it can never fail a release.
 bin/check-heavy-lock.sh  The proofs of canon/tools/heavy-lock.sh, the
-                  machine-wide heavy-build lock: each guarantee shown
-                  holding, then broken out of a copy and shown caught.
+                  heavy-build lock: each guarantee shown holding, then
+                  broken out of a copy and shown caught.
 ```
 
 Not all of canon is TypeScript, and the check does not care — it compares
@@ -185,19 +185,28 @@ is built BEFORE the tag, so a broken one stops the release and the re-run
 reuses the version; the device builds run after the push, where a phone that is
 not plugged in is reported and nothing more.
 
-**One heavy build at a time is enforced, machine-wide.** Every platform block
-in `bin/build-platforms.sh` — the Mac bundle, the iOS build, the Android build
-— runs under `heavy_lock` from `canon/tools/heavy-lock.sh`, a lock every app
-carries as `tools/heavy-lock.sh` for its own build-platforms.sh to take up.
+**One heavy build at a time is enforced among the builds that take the
+lock.** Every platform block in `bin/build-platforms.sh` — the Mac bundle, the
+iOS build, the Android build — runs under `heavy_lock` from
+`canon/tools/heavy-lock.sh`, a lock every app carries as `tools/heavy-lock.sh`.
 It is a directory made with `mkdir`, which is atomic, at one per-user path
 outside every repo, so two sessions, two checkouts or a lane and a hand-run
-build all queue on the same one. A block that finds it held waits and says whose it is,
-on the terminal and on the status card; a holder that died is taken over; a
-wait past 30 minutes fails the step rather than hanging the lane. Overlap is
-what turned a 246 s AcctMind lane into a 1574 s one on 2026-09-30, the night
-two sessions built at once (gradle 95 s → 412 s); waiting for the other build
-costs only its remaining minutes. AGENTS.md's Platforms section has the
-details and the proofs.
+script all queue on the same one. A block that finds it held waits and says
+whose it is, on the terminal and on the status card; a holder that died is
+taken over; a wait past 30 minutes fails the step rather than hanging the lane.
+Overlap is what turned a 246 s AcctMind lane into a 1574 s one on 2026-09-30,
+the night two sessions built at once (gradle 95 s → 412 s); waiting for the
+other build costs only its remaining minutes. AGENTS.md's Platforms section
+has the details and the proofs.
+
+What takes it today: the four apps' `tools/build-platforms.sh`, MyCalMind's
+`tools/deploy-device.sh`, AcctMind's `desktop/smoke.sh` when it builds, and
+the fallback here. It looks for no build process, only for the lock, so it
+does not see a build that never takes it: WriteMind's (in the dtp ORDER,
+building with xcodebuild, carrying no copy of the helper), WriteMindCross's,
+the TestMindSuite forks', an xcodebuild, gradle or cargo typed by hand, or a
+build started from Xcode's own window. Beside one of those, a lane still
+builds at the same time.
 
 **Android IS covered**, and has been since 2026-08-22 (`bf571bc`). Every app
 builds `assembleRelease`, installs it, and LAUNCHES it on a reachable device —
