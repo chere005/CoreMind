@@ -4,9 +4,10 @@
 //
 // The two excluded tests are the server-protocol checks (REC_ID_RE,
 // MAX_BATCH): canon carries CalMind's copies, which read the server from
-// CalMind's own tree — a tree this repo does not have. They still run in
-// CalMind (in-repo) and in ChefMind (via the sibling checkout); excluding
-// them HERE loses nothing that was ever covered here.
+// CalMind's own tree — a tree this repo does not have. Their app.php half
+// runs only in CalMind (in-repo); ChefMind carries fork copies that assert
+// the protocol.json half alone. Excluding them HERE loses nothing that was
+// ever covered here.
 import { defineConfig, configDefaults } from 'vitest/config';
 
 export default defineConfig({

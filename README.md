@@ -29,7 +29,7 @@ Node and npm; the lanes and the check are plain `/bin/sh`.
 
 ```sh
 npm install
-npm test          # the canon core suite itself: 634 tests, run HERE
+npm test          # the canon core suite itself, run HERE
 npm run typecheck
 npm run check     # every consumer with a checkout, against canon
 ```

@@ -168,8 +168,7 @@ if [ "$DRY" = 0 ] && [ -n "$TOUCHED" ]; then
     # Named explicitly rather than trusted: `npm run typecheck` in a repo with
     # no such script exits 1 saying "Missing script", which this would have
     # reported as a FAILED TYPECHECK — blaming a check that never ran.
-    if ! ( cd "$ROOT" && npm run -s typecheck --silent >/dev/null 2>&1 ) \
-       && ! node -e "process.exit((require('$ROOT/package.json').scripts||{}).typecheck?0:1)"; then
+    if ! node -e "process.exit((require('$ROOT/package.json').scripts||{}).typecheck?0:1)"; then
       echo "$NAME defines no \`typecheck\` script — the copy cannot be proven the usual way." >&2
       exit 1
     fi
