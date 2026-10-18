@@ -4,213 +4,55 @@ The baseline for all of Sean's repos lives in ~/GIT/AgentSuite/AGENTS.md
 and is imported here; this file holds only what is true of THIS repo.
 @../AgentSuite/AGENTS.md
 
-The canonical home of what the Mind-suite apps share. `ARCHITECTURE.md` is the
-map and the doctrine (`README.md` is the short front door that links to it);
-this file is how to work in here.
+## Rules
 
-## Standing rules
+- **Never a dependency.** No app imports, links or installs this repo; the suite clones and checks. Changing that starts in the consumers' AGENTS.md, on Sean's word.
+- **Canon changes are copies, not edits.** Fix lands in its home repo (CalMind unless a superset lives elsewhere), then the SAME BYTES are copied here and to every mirroring consumer; promoting a verified superset is also a copy.
+- **Manifests are hand-kept.** `consumers/*.tsv` rows are mode/canon/local/note, tab-separated: `exact` fails the check on drift; `owed` = verified lag awaiting copy-down (promote to `exact` on landing); `fork` = deliberate divergence, note says why. Never demote a failing `exact` to `fork` to go green.
+- **The deploy graph lives only in `bin/plan.sh`** (`ORDER`, `downstream_of()`, `resolve_plan`); `bin/deploy.sh` and `bin/dtp.sh` source it before reading flags; a new edge goes there. Deploys CASCADE; `--only` ships one thing.
+- **`npm run dtp` / `tdtp` wrap `bin/dtp.sh`**, the suite orchestrator (not a per-repo release script). No default target: pass one after `--`. tdtp (`--full`) runs each repo's tests first. Core's lane bumps its minor only on a tag collision, else tags what `package.json` says.
+- **`bin/report-status.sh` is this repo's.** Every failure path warns on stderr and exits 0; `start` prints its run id even if the push failed (caller still owes a `finish`).
+  `bin/dtp.sh` calls it at five points (start, a beat each minute, three finishes: failed / shipped-with-platform-build-down / clean) and exports `MIND_RUN_ID`; a lane that sees it reports nothing.
+- **A lane's non-zero exit means "shipped, a build is owed", not "stopped".** `bin/dtp.sh` folds it into `PLATFORM_BAD`, continues, and ends non-zero itself at the finish.
+- **The TAG is the evidence, never the exit code:** a tag the lane itself made, absent before it ran. HEAD still carrying the PREVIOUS release's tag proves nothing. A lane that failed BEFORE its tag stops everything; so does one killed by a signal (exit >128), whatever its tags say; ^C/TERM at the batch ends it, card closed once, dying of that signal.
+- **`deploy-core.sh` writes app source, commits nothing:** refuses a dirty consumer, never touches `fork` rows, leaves `owed` alone unless asked, refuses the BLOCKED row by name, runs each touched app's typecheck and core suite before claiming the copy landed.
+- **A live mail send is a host's config change, never a canon edit.** `canon/server/lib/mail.php` transport stays commented out beside the stub.
 
-- **This repo never becomes a dependency.** No app imports it, links it, or
-  installs it. The suite clones and checks — a CoreMind that apps imported
-  would be a build step and a trust relationship, which is exactly what the
-  consumers' own rules refuse. If that ever changes, it changes in the
-  consumers' AGENTS.md files first, on Sean's word.
-- **Canon changes are copies, not edits.** A shared fix lands in its home
-  repo (CalMind, unless a superset genuinely lives elsewhere), then the SAME
-  BYTES are copied here and to every consumer that mirrors the file. Editing
-  canon by hand to something no repo carries makes the check lie about
-  everyone at once. The one exception is promoting a verified superset into
-  canon — which is a copy too, just from a different repo.
-- **The manifests are hand-kept and load-bearing.** consumers/*.tsv rows are
-  mode/canon/local/note, tab-separated. `exact` rows FAIL the check on
-  drift; `owed` rows are verified lags awaiting a copy-down (promote to
-  `exact` when it lands); `fork` rows are deliberate divergences whose note
-  says why. A row's mode is a claim about intent — never demote a failing
-  `exact` to `fork` to make the check green; that is deleting the alarm.
-- **Run all three before committing**: `npm test` (the canon suite — proof
-  the canonical set coheres), `npm run typecheck`, and `npm run check`
-  against the sibling checkouts. A change to `canon/tools/heavy-lock.sh`
-  adds a fourth, `sh bin/check-heavy-lock.sh` (see Platforms) — kept out of
-  `npm test` because it waits out real holds for about two minutes, and the
-  core lane runs `npm test` on every tdtp.
-- **The deploy graph lives in one place: `bin/plan.sh`.** It holds the
-  `ORDER`, `downstream_of()` and `resolve_plan`, and both `bin/deploy.sh` and
-  `bin/dtp.sh` source it before reading their flags — it is the reason
-  ChefMind cannot ship before the API it checks, and an edge added there is
-  added to both. A deploy CASCADES by default; `--only` is the way to ship
-  one thing.
-- **`npm run dtp` / `npm run tdtp` wrap `bin/dtp.sh`, the suite orchestrator
-  this repo owns** — not a per-repo release script like the four apps have.
-  dtp deploys, tags, and pushes each targeted repo's own lane, in
-  `bin/plan.sh`'s order; tdtp (`--full`) runs each repo's own test suite
-  first. Unlike the apps, there is no default target — pass one after `--`:
-  `npm run dtp -- --only core` (CoreMind alone — propagate canon,
-  `bin/check-drift.sh`, tag, push; a bare `core` cascades into CalMind,
-  ChefMind and AcctMind like any dtp target), `npm run dtp -- all` (every
-  repo, core first), or `npm run tdtp -- all --platforms` (test-first, whole
-  suite, plus each app's own macOS/iOS/Android builds — the flag is passed
-  through to its lane, see Platforms). Core's own lane bumps its minor version
-  only on a tag collision, otherwise it tags whatever `package.json` says.
-- **The suite's status reporter is this repo's.** `bin/report-status.sh` is
-  what the baseline's "a status failure never fails a release" rule is about:
-  every failure path in it warns on stderr and exits 0, deliberately, and
-  `start` prints its run id even when the push failed because the caller still
-  has a `finish` to make. `bin/dtp.sh` calls it at five points — the start, a
-  beat every minute while a lane is in flight, and three finishes (failed,
-  shipped-with-a-platform-build-down, clean) — and exports `MIND_RUN_ID` so a
-  batch draws ONE card. Sean, 2026-08-23: "there should be one card per tdtp if
-  multiple jobs are triggered in one batch". Every app ships itself now and
-  each lane would otherwise open a run of its own, so the parent's id travels
-  down; a lane that sees it reports nothing and lets the parent's card stand.
-- **A lane's non-zero exit means "shipped, a build is owed" — not "stopped".**
-  A self-shipping lane ends non-zero when a device build did not finish, so
-  "it all worked" cannot be read off its exit status. Under `set -e` that would
-  abort the batch at the first unplugged phone and stop every repo after it
-  from shipping at all, which is a far worse answer than the one the exit code
-  is trying to give. `bin/dtp.sh` catches it: the verdict is folded into
-  `PLATFORM_BAD`, the run continues, and this script ends non-zero itself at
-  the finish. A lane that failed BEFORE its tag still stops everything — the
-  TAG is the evidence for which happened, never the exit code. One exit code
-  does decide it: a lane that died of a signal (above 128) was stopped, and
-  stops the batch whatever its tags say — just as a ^C or a TERM aimed at the
-  batch itself ends it, card closed once, dying of that signal.
-- **`deploy-core.sh` writes over app source and commits nothing.** It refuses
-  a dirty consumer (two changes in one diff has no way back), never touches a
-  `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
-  by name, and runs each touched app's own typecheck and core suite before
-  claiming the copy landed.
-- **A live send is a host's config change, never a canon edit.** Canon's mail
-  transport (`canon/server/lib/mail.php`) stays commented out beside the stub.
+## Commands
+
+Before committing run all: `npm test` (canon suite), `npm run typecheck`, `npm run check` (against sibling checkouts).
+
+```
+npm run dtp -- --only core        # CoreMind alone: propagate canon, bin/check-drift.sh, tag, push
+npm run dtp -- all                # every repo, core first
+npm run tdtp -- all --platforms   # test-first, whole suite, plus each app's macOS/iOS/Android builds
+sh bin/check-heavy-lock.sh        # also required after any change to canon/tools/heavy-lock.sh
+```
+
+- A bare `core` cascades into CalMind, ChefMind, AcctMind. `check-heavy-lock.sh` stays out of `npm test` (waits ~2 min; core lane runs `npm test` every tdtp).
 
 ## Platforms
 
-CoreMind ships nothing of its own — no server, no app, no platform build; it
-tags itself and stops.
+CoreMind ships nothing of its own; it tags itself and stops. Platform builds belong to the app.
 
-**Platform builds belong to the app, not to this repo.** All four now carry
-their own `tools/build-platforms.sh` (and PrivateApp, the fifth since
-2026-09-18, carries one that knows only `--mac` and REFUSES `--ios` and
-`--android` by name — its Mac bundle is its deploy, so its lane takes `--web`
-as a no-op), grown the same day on Sean's word —
-2026-08-23, "all apps should have a deploy on their own mechanism inside their
-repo... coremind is to ship all apps simultaneously". So `bin/dtp.sh` DETECTS
-that file rather than listing apps: an app that has it gets `--platforms`
-passed THROUGH to its own lane (and `--web`, meaning the release with no
-platform builds, when the flag is unset), and whatever it builds is credited to
-it. What CoreMind owns here is the ORDER and that pass-through — the artifacts
-are the app's, built where the app's lane wants them: its desktop bundle before
-its tag, its device builds after its push.
-
-`bin/build-platforms.sh` is therefore the **fallback**, run only for an app
-with no `tools/build-platforms.sh` of its own — today, none of the four. It is
-also the ORIGIN those four copies came down from, comments and all (they say
-so in their own headers), which is why it stays complete rather than trimmed to
-whoever still needs it. Its table is what the three lists below describe — not
-what a `dtp --platforms` run executes today:
-
-- **macOS** — a Tauri desktop bundle for CalMind, ChefMind and AcctMind, and
-  a real **Mac Catalyst** app for MyCalMind, which has no Tauri shell. All four
-  are copied into `/Applications` and the copy is verified; the install step
-  was missing until 2026-08-22, which is why "i don't see chefmind on macos"
-  was true of every app at once and of none of their builds.
-
-  Catalyst took 26 attempts and four distinct causes, all now handled by the
-  script plus MyCalMind's own `withMacCatalyst` config plugin: the widget
-  target needed `SUPPORTS_MACCATALYST` too; there is no x86_64 Catalyst slice
-  upstream, so the build is arm64-only; Expo's and RN's prebuilt XCFrameworks
-  ship no maccatalyst copy, so it builds from source
-  (`EXPO_USE_PRECOMPILED_MODULES=0 RCT_USE_PREBUILT_RNCORE=0`); and the
-  vendored ReactNativeDependencies bundle is malformed for that slice.
-
-  **That last repair is not durable yet.** The `[CP-User] [RNDeps]` script
-  phase is `alwaysOutOfDate`, so it re-extracts the pristine bundle mid-build
-  and undoes anything fixed beforehand — which is why the repair is PATCHED
-  INTO that phase by `bin/patch-rndeps-catalyst.js` rather than run before it.
-  The patch is idempotent and re-applied on every build, but it is a patch to
-  generated output: a fresh `expo prebuild` rewrites the pbxproj and the
-  script has to run again. It does — from here, and from the verbatim copy at
-  MyCalMind's `tools/patch-rndeps-catalyst.js`, which is the one that actually
-  runs now. The thing to know is that nothing upstream has been fixed.
-- **iOS** — builds once and installs to EVERY phone the app belongs on, via
-  `devicectl`. The table names them per app, because which handsets carry an
-  app is a fact about the app: CalMind goes to all three (Sean's, Autumn's,
-  Patricia's), ChefMind to Sean's and Autumn's, AcctMind to Sean's. Sean,
-  2026-09-21: *"the only apps installed on autumn's phone are ChefMind and
-  CalMind"*, *"patricia's phone only gets CalMind"*. A listed phone that is
-  switched off is skipped with a note, a phone that refuses is warned about,
-  and the step fails only when NONE of them took the app. CalMind's install
-  also carries its watch companion onto a paired Apple Watch when one is
-  reachable.
-
-  There is no per-phone app cap to ration. Apple's free-tier limit of 3 apps
-  on a device does not apply: the team (2LGYTL3FSJ, "Sean Cheren") is PAID,
-  its Xcode-managed profile carrying `TimeToLive 365` where a personal team's
-  carries 7. Sean, 2026-09-21: *"no more caps per phone."* Any note in this
-  repo about freeing a slot describes a constraint that is gone.
-
-  MyCalMind's iOS build is BUILD ONLY and still does not install — not to
-  spare a slot, but because its own `tools/deploy-device.sh` owns its device
-  deploy, and two lanes pushing one app to one phone is how they disagree.
-- **Android** — builds, installs, and launches on a local emulator (or
-  connected hardware), for all four apps: CalMind, ChefMind, AcctMind, and
-  MyCalMind.
-
-`--mac` / `--ios` / `--android` select a subset, `--dry-run` prints the plan
-and stops, and no flag at all builds all three — the same convention all four
-copies use, so a gesture learned here works in any of them.
-
-**Never two heavy builds at once is a lock now, not a rule to remember.** A
-flaky WebKit test under load and an Android emulator crash when gradle and
-xcodebuild overlapped had both happened, every AGENTS.md said "serialize", and
-on 2026-09-30 two sessions broke it anyway — one lane's gradle beside another
-session's xcodebuild, an AcctMind dtp --quick at 1574 s instead of 246. So
-every platform block in `bin/build-platforms.sh` runs inside
-`heavy_lock "<app> <platform>"` … `heavy_unlock`, from
-`canon/tools/heavy-lock.sh`, which every app carries byte for byte as
-`tools/heavy-lock.sh` (adopting it in their own `tools/build-platforms.sh` is
-each app's change). What it does, in short — the file's own comments have the
-why of each:
-
-- a `mkdir` lock at `/tmp/mind-heavy-<uid>.lock` — one per machine user,
-  outside every repo, so every session, checkout and terminal queues on the
-  same one (`$TMPDIR` would not: a sandboxed session gets its own);
-- a block that finds it held WAITS, printing who holds it (repo, step, pid,
-  since when) every 30 s and, under `bin/dtp.sh`, putting the wait on the
-  status card through `MIND_PHASE_FILE`, which the batch exports; after 30
-  minutes (`MIND_HEAVY_WAIT`) it fails the step instead;
-- a holder whose pid is gone — or recycled into another process — is taken
-  over; a lock that cannot be created at all fails at once; a heavy block
-  nested inside another fails at once rather than waiting for itself;
-- it lets go on EXIT, INT and TERM through traps that WRAP the caller's
-  rather than replacing them, so an `exit 1` or a Ctrl-C ends the run exactly
-  as it would have without the lock.
-
-`sh bin/check-heavy-lock.sh` proves all of that under `sh` and `dash`, then
-breaks each guarantee out of a copy and watches the case fail. It uses its
-own lock in a scratch directory (`MIND_HEAVY_LOCK`, which nothing else may
-set), so it never queues behind a real build or blocks one.
-
-Xcode's derivedData and gradle's cache both stay on the internal disk.
-`/Volumes/SPACE` is exFAT, which keeps neither the extended attributes
-codesign needs nor the atomic directory writes gradle's cache needs (each
-proven by a failed build against it; the `BUILD_SCRATCH` note in
-`bin/build-platforms.sh` has the codesign half). This paragraph used to say
-derivedData preferred SPACE when mounted; the script stopped doing that on
-2026-08-22.
+- Each app carries `tools/build-platforms.sh`; `bin/dtp.sh` DETECTS it and passes `--platforms` through (`--web` = release with no platform builds, when unset). CoreMind owns the ORDER and the pass-through only. PrivateApp's script knows only `--mac`, REFUSES `--ios`/`--android` by name; its lane takes `--web` as a no-op.
+- `bin/build-platforms.sh` is the **fallback**, run only for an app with no script of its own (today none) and the ORIGIN of the copies; keep it complete. Flags: `--mac`/`--ios`/`--android` subset, `--dry-run` plan only, none = all three.
+- **macOS:** Tauri bundle for CalMind, ChefMind, AcctMind; Mac Catalyst app for MyCalMind (no Tauri). Copied into `/Applications` and verified.
+- **Catalyst:** MyCalMind's `withMacCatalyst` plugin plus the script cover: widget target needs `SUPPORTS_MACCATALYST`; arm64 only (no x86_64 slice); builds from source (`EXPO_USE_PRECOMPILED_MODULES=0 RCT_USE_PREBUILT_RNCORE=0`); vendored ReactNativeDependencies malformed for that slice.
+- **RNDeps repair not durable:** `[CP-User] [RNDeps]` phase is `alwaysOutOfDate`, re-extracts the pristine bundle mid-build → repair is PATCHED INTO that phase by `bin/patch-rndeps-catalyst.js` (idempotent; the copy that runs is MyCalMind's `tools/patch-rndeps-catalyst.js`). `expo prebuild` rewrites the pbxproj → rerun.
+- **Android:** build, install, launch on local emulator or hardware for CalMind, ChefMind, AcctMind, MyCalMind.
+- **iOS:** builds once, installs via `devicectl` to every phone the app belongs on: CalMind to Sean's, Autumn's, Patricia's; ChefMind to Sean's and Autumn's; AcctMind to Sean's; nothing else on Autumn's or Patricia's.
+  Off phone: skipped with a note; refusing phone: warned; fails only if NONE took it. CalMind also installs its watch companion when a paired Watch is reachable.
+- **No per-phone app cap:** team 2LGYTL3FSJ ("Sean Cheren") is PAID (`TimeToLive 365`); notes about freeing a slot are obsolete.
+- MyCalMind iOS is BUILD ONLY, never installs: its `tools/deploy-device.sh` owns its device deploy (two lanes on one phone disagree).
+- **Heavy builds are serialized by a lock, not memory:** every platform block in `bin/build-platforms.sh` runs in `heavy_lock "<app> <platform>"` … `heavy_unlock` from `canon/tools/heavy-lock.sh` (each app carries it byte for byte as `tools/heavy-lock.sh`; adopting it in their build script is each app's change).
+- Lock: `mkdir` at `/tmp/mind-heavy-<uid>.lock` (per machine user, outside repos; `$TMPDIR` is not shared).
+- A waiter prints the holder (repo, step, pid, since) every 30 s, reports to the card via `MIND_PHASE_FILE`, fails after 30 min (`MIND_HEAVY_WAIT`). Dead/recycled holder pid is taken over; uncreatable lock or nested heavy block fails at once.
+- Released on EXIT, INT, TERM via traps that WRAP the caller's. `check-heavy-lock.sh` uses its own scratch lock (`MIND_HEAVY_LOCK`, nothing else may set it).
+- derivedData and gradle cache stay on the internal disk: `/Volumes/SPACE` is exFAT (no codesign xattrs, no atomic dir writes for gradle; see `BUILD_SCRATCH` note in `bin/build-platforms.sh`).
 
 ## Traps
 
-- **canon/packages/core/tsconfig.json extends `../../tsconfig.base.json`** —
-  which is why canon/tsconfig.base.json exists and is itself an exact-mode
-  entry. Delete it and both the typecheck and the vitest transform fail in
-  ways that name neither file.
-- **The two server-protocol tests are excluded from the canon run**
-  (vitest.canon.config.mts): canon carries CalMind's copies, which read the
-  server out of CalMind's own tree. Their app.php half runs only in CalMind;
-  ChefMind carries fork copies that assert the protocol.json half alone. The
-  exclusion here loses nothing that was ever covered here.
-- **vitest.canon.config.mts lives OUTSIDE canon/ deliberately** — canon
-  holds only bytes some consumer carries, and no consumer has this config.
-- **The check's default parent is the sibling directory.** Working from a
-  checkout somewhere else, set MIND_DIR or the check silently skips every
-  consumer — it says so per repo, so read the output, not just the exit code.
+- `canon/packages/core/tsconfig.json` extends `../../tsconfig.base.json` → that is why `canon/tsconfig.base.json` exists (exact-mode entry). Delete it → typecheck and vitest transform fail naming neither file.
+- The two server-protocol tests are excluded from the canon run (`vitest.canon.config.mts`, which lives OUTSIDE `canon/` on purpose: canon holds only consumer-carried bytes): they read CalMind's tree; app.php half runs only in CalMind, ChefMind's fork copies assert protocol.json alone.
+- The check's default parent is the sibling directory. Elsewhere, set `MIND_DIR` or the check silently skips every consumer (says so per repo; read the output, not the exit code).
