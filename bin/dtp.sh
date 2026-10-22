@@ -81,6 +81,25 @@ for T in $PLAN; do
   fi
   git -C "$R" remote get-url origin >/dev/null 2>&1 \
     || { echo "  $T has no origin remote — the lane ends in a push" >&2; exit 1; }
+  # Sean, 2026-10-21: "i desperately want to prevent getting github emails about
+  # failed jobs". The only Actions job any lane starts is desktop-windows,
+  # dispatched at the end of a release (CalMind, ChefMind, AcctMind). A red run
+  # mails him, and shipping on top of a red one dispatches another build of the
+  # same tree to fail the same way. So the last run on main must not be a
+  # failure BEFORE the first repo ships; fix it or re-run it green first. This
+  # cannot promise the new build passes, only that we never knowingly start one
+  # that will not.
+  if [ -f "$R/.github/workflows/desktop-windows.yml" ] && command -v gh >/dev/null 2>&1; then
+    LAST=$(cd "$R" && gh run list --workflow desktop-windows --branch main --limit 1 \
+      --json conclusion --jq '.[0].conclusion // "none"' 2>/dev/null || echo unknown)
+    case "$LAST" in
+      failure|timed_out|startup_failure)
+        echo "  $T: the last desktop-windows run on main is '$LAST'." >&2
+        echo "  Shipping would dispatch another build of a tree that fails, and GitHub would email it." >&2
+        echo "  Fix it, or re-run it green from the Actions tab, then dtp again." >&2
+        exit 1 ;;
+    esac
+  fi
   printf '  \033[32m✓\033[0m %-10s main, clean, has an origin\n' "$T"
 done
 
