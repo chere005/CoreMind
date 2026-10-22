@@ -8,7 +8,6 @@ exact	canon/app/src/components/EditExit.tsx	app/src/components/EditExit.tsx
 exact	canon/app/src/components/FolderManager.tsx	app/src/components/FolderManager.tsx	
 exact	canon/app/src/components/IngredientBadge.tsx	app/src/components/IngredientBadge.tsx	
 exact	canon/app/src/components/ItemModal.tsx	app/src/components/ItemModal.tsx	
-exact	canon/app/src/components/PickBar.tsx	app/src/components/PickBar.tsx	
 exact	canon/app/src/components/PieDot.tsx	app/src/components/PieDot.tsx	
 exact	canon/app/src/components/RichText.tsx	app/src/components/RichText.tsx	
 exact	canon/app/src/components/ShareModal.tsx	app/src/components/ShareModal.tsx	

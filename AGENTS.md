@@ -16,7 +16,7 @@ and is imported here; this file holds only what is true of THIS repo.
 - **A lane's non-zero exit means "shipped, a build is owed", not "stopped".** `bin/dtp.sh` folds it into `PLATFORM_BAD`, continues, and ends non-zero itself at the finish.
 - **The TAG is the evidence, never the exit code:** a tag the lane itself made, absent before it ran. HEAD still carrying the PREVIOUS release's tag proves nothing. A lane that failed BEFORE its tag stops everything; so does one killed by a signal (exit >128), whatever its tags say; ^C/TERM at the batch ends it, card closed once, dying of that signal.
 - **`deploy-core.sh` writes app source, commits nothing:** refuses a dirty consumer, never touches `fork` rows, leaves `owed` alone unless asked, refuses the BLOCKED row by name, runs each touched app's typecheck and core suite before claiming the copy landed.
-- **A live mail send is a host's config change, never a canon edit.** `canon/server/lib/mail.php` transport stays commented out beside the stub.
+- **A live mail send is a host's config change, never a canon edit.** CalMind's `server/lib/mail.php` transport stays commented out beside the stub.
 
 ## Commands
 
