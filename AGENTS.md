@@ -79,8 +79,8 @@ this file is how to work in here.
   `fork` row, leaves `owed` rows alone unless asked, refuses the BLOCKED one
   by name, and runs each touched app's own typecheck and core suite before
   claiming the copy landed.
-- **A live send is a host's config change, never a canon edit.** Canon's mail
-  transport (`canon/server/lib/mail.php`) stays commented out beside the stub.
+- **A live send is a host's config change, never a canon edit.** The mail
+  transport (CalMind's `server/lib/mail.php`) stays commented out beside the stub.
 
 ## Platforms
 

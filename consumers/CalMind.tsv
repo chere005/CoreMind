@@ -59,15 +59,13 @@ exact	canon/desktop/stage-dist.sh	desktop/stage-dist.sh
 exact	canon/packages/core/package.json	packages/core/package.json	
 exact	canon/packages/core/src/b64u.ts	packages/core/src/b64u.ts	
 exact	canon/packages/core/src/backup.ts	packages/core/src/backup.ts	
-exact	canon/packages/core/src/calsub.ts	packages/core/src/calsub.ts	
 exact	canon/packages/core/src/day.ts	packages/core/src/day.ts	
 exact	canon/packages/core/src/habit.ts	packages/core/src/habit.ts	
 exact	canon/packages/core/src/ical.ts	packages/core/src/ical.ts	
-exact	canon/packages/core/src/index.ts	packages/core/src/index.ts	
+fork	canon/packages/core/src/index.ts	packages/core/src/index.ts	deliberate: also exports calsub and meetreq, which only CalMind carries (they live in CalMind alone); canon holds the barrel without them so the canon suite runs
 exact	canon/packages/core/src/layout.ts	packages/core/src/layout.ts	
 exact	canon/packages/core/src/manage.ts	packages/core/src/manage.ts	
 exact	canon/packages/core/src/markdown.ts	packages/core/src/markdown.ts	
-exact	canon/packages/core/src/meetreq.ts	packages/core/src/meetreq.ts	
 exact	canon/packages/core/src/normalize.ts	packages/core/src/normalize.ts	
 exact	canon/packages/core/src/order.ts	packages/core/src/order.ts	
 exact	canon/packages/core/src/parse.ts	packages/core/src/parse.ts	
@@ -86,7 +84,6 @@ exact	canon/packages/core/test/b64u.test.ts	packages/core/test/b64u.test.ts
 exact	canon/packages/core/test/b64ufuzz.test.ts	packages/core/test/b64ufuzz.test.ts	
 exact	canon/packages/core/test/backup.test.ts	packages/core/test/backup.test.ts	
 exact	canon/packages/core/test/batchlimit.test.ts	packages/core/test/batchlimit.test.ts	
-exact	canon/packages/core/test/calsub.test.ts	packages/core/test/calsub.test.ts	
 exact	canon/packages/core/test/clockdrift.test.ts	packages/core/test/clockdrift.test.ts	
 exact	canon/packages/core/test/copyline.test.ts	packages/core/test/copyline.test.ts	
 exact	canon/packages/core/test/day.test.ts	packages/core/test/day.test.ts	
@@ -105,7 +102,6 @@ exact	canon/packages/core/test/layoutfit.test.ts	packages/core/test/layoutfit.te
 exact	canon/packages/core/test/manage.test.ts	packages/core/test/manage.test.ts	
 exact	canon/packages/core/test/manageguards.test.ts	packages/core/test/manageguards.test.ts	
 exact	canon/packages/core/test/markdown.test.ts	packages/core/test/markdown.test.ts	
-exact	canon/packages/core/test/meetreq.test.ts	packages/core/test/meetreq.test.ts	
 exact	canon/packages/core/test/nonadvancing.test.ts	packages/core/test/nonadvancing.test.ts	
 exact	canon/packages/core/test/normalize.test.ts	packages/core/test/normalize.test.ts	
 exact	canon/packages/core/test/normidem.test.ts	packages/core/test/normidem.test.ts	
@@ -149,7 +145,6 @@ exact	canon/tools/sw.js	tools/sw.js
 exact	canon/tools/sync-lock-versions.mjs	tools/sync-lock-versions.mjs	
 exact	canon/tsconfig.base.json	tsconfig.base.json	
 exact	canon/packages/core/src/recipe.ts	packages/core/src/recipe.ts	
-exact	canon/server/lib/mail.php	server/lib/mail.php	
 exact	canon/spec/span.json	spec/span.json	
 exact	canon/packages/core/test/dayspan.test.ts	packages/core/test/dayspan.test.ts	
 exact	canon/app/test/rowslots.test.ts	apps/app/test/rowslots.test.ts	

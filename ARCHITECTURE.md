@@ -44,7 +44,7 @@ own `AGENTS.md` still forbids importing from the lineage repos.
 It participates here through the desktop-shell files and the three release-lane
 helpers all four carry identically — `tools/sync-lock-versions.mjs`,
 `tools/tdtp.sh` since 2026-09-30, and `tools/heavy-lock.sh` since 2026-10-01 —
-through the pick bar as a noted `fork` (Sean,
+through the pick bar (now ChefMind's own, no longer in canon) as a noted `fork` (Sean,
 2026-09-21: "take the 'selected' behavior from chefmind and implement that
 here... this core behavior should live in CoreMind"; ChefMind is its home and
 carries the canonical bytes, AcctMind re-draws them over a palette that has no
@@ -86,10 +86,9 @@ bin/check-heavy-lock.sh  The proofs of canon/tools/heavy-lock.sh, the
 
 Not all of canon is TypeScript, and the check does not care — it compares
 bytes: `desktop/` is the Tauri shell's Rust and config, `app/modules/native-ocr/`
-is the OCR module's Swift half, and `canon/server/` is PHP mirrored only by the
-consumer that has a server (CalMind). Today it holds `lib/mail.php`, the
-suite's stubbed mail transport — the real SMTP send sits commented out beside
-the stub, and stays commented in canon (see AGENTS.md).
+is the OCR module's Swift half. Nothing used by a single app lives in canon:
+CalMind's `server/lib/mail.php` (the stubbed mail transport) and ChefMind's
+`PickBar.tsx` were moved out to their only users.
 
 ## Checking
 
@@ -257,9 +256,7 @@ copied down; CalMind's row is `exact` now, like every other.
 - **Deploy scripts and their guard provers** — three genuinely different
   scripts sharing doctrine, not code: per-app destination tables ARE the app.
 - **The server** — still CalMind's alone, by design; ChefMind rides it via the
-  sync space. The exception is the one file the suite's mail doctrine turns
-  on: `server/lib/mail.php` IS canon (see above), mirrored by the single
-  consumer that has a server to mirror it into.
+  sync space, and that includes `server/lib/mail.php`.
 
 ## Where it came from, and where it stands
 
