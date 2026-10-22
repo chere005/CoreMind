@@ -153,6 +153,10 @@ stop_beat() {
 }
 
 report_fail() {
+  # The phase is read BEFORE stop_beat, which removes its file. Until
+  # 2026-10-01 it was read after, so the cat always failed and every failed
+  # card said "Stopped during <the whole plan>" instead of naming the step.
+  STOPPED_IN=$(cat "$PHASE_FILE" 2>/dev/null || echo "$PLAN")
   stop_beat
   # EXACTLY ONCE: REPORT_DONE goes to 1 BEFORE the reporter runs, so the EXIT
   # after a signal, a second ^C while this finish is still pushing, and the
@@ -160,7 +164,7 @@ report_fail() {
   [ -n "$RUN_ID" ] && [ "$REPORT_DONE" != 1 ] || return 0
   REPORT_DONE=1
   sh bin/report-status.sh finish "$RUN_ID" failed 3 \
-    "Stopped during $(cat "$PHASE_FILE" 2>/dev/null || echo "$PLAN"). Nothing after the failure was shipped; what ran before it was." 2>/dev/null || true
+    "Stopped during $STOPPED_IN. Nothing after the failure was shipped; what ran before it was." 2>/dev/null || true
   RUN_ID=""
   return 0
 }
@@ -265,6 +269,9 @@ for T in $PLAN; do
       # the lane's verdict is remembered and folded into THIS script's own exit
       # status at the end, and the remaining repos still run.
       LANE_RC=0
+      # Every tag the repo carries BEFORE its lane runs — what the verdict
+      # below measures against. See there for why HEAD's tags alone are not.
+      TAGS_BEFORE=$(git -C "$R" tag --list)
       if [ "$FULL" = 1 ]; then
         ( cd "$R" && sh tools/tdtp.sh $LANE_ARGS ) || LANE_RC=$?
       else
@@ -284,8 +291,18 @@ for T in $PLAN; do
         fi
         # Distinguish "shipped, a device build is owed" from "did not ship".
         # A lane that failed BEFORE its tag leaves no new tag behind, so the
-        # tag is the evidence, not the exit code.
-        if [ -n "$(git -C "$R" tag --points-at HEAD 2>/dev/null)" ]; then
+        # tag is the evidence, not the exit code — but only a tag THIS lane
+        # made. Asking whether HEAD carries any tag at all (the test until
+        # 2026-10-01) gets it backwards for an app with nothing new since its
+        # last release: HEAD is still that release's bump commit, still
+        # tagged, so a lane that died at the drift gate, the dirty check, the
+        # tdtp tests or "tag already exists" was read as shipped — the batch
+        # went on shipping the repos after it and closed the card "Shipped".
+        SHIPPED=""
+        for TG in $(git -C "$R" tag --points-at HEAD 2>/dev/null); do
+          printf '%s\n' "$TAGS_BEFORE" | grep -qxF "$TG" || SHIPPED="$TG"
+        done
+        if [ -n "$SHIPPED" ]; then
           echo "   $T shipped; a platform build did not finish (its lane said so)" >&2
           PLATFORM_BAD="$PLATFORM_BAD $T"
         else
