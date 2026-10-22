@@ -158,3 +158,9 @@ exact	canon/packages/core/src/folds.ts	packages/core/src/folds.ts
 exact	canon/packages/core/src/chefdate.ts	packages/core/src/chefdate.ts	
 exact	canon/packages/core/test/folds.test.ts	packages/core/test/folds.test.ts	
 exact	canon/packages/core/test/chefdate.test.ts	packages/core/test/chefdate.test.ts	
+exact	canon/app/targets/watch/Assets.xcassets/AppIcon.appiconset/Contents.json	apps/app/targets/watch/Assets.xcassets/AppIcon.appiconset/Contents.json	
+exact	canon/app/targets/watch/CalMindWatchApp.swift	apps/app/targets/watch/CalMindWatchApp.swift	
+exact	canon/app/targets/watch/ReminderListView.swift	apps/app/targets/watch/ReminderListView.swift	
+exact	canon/app/targets/watch/WatchFormat.swift	apps/app/targets/watch/WatchFormat.swift	
+exact	canon/app/targets/watch/WatchTabs.swift	apps/app/targets/watch/WatchTabs.swift	
+exact	canon/app/modules/watch-bridge/ios/WatchBridge.podspec	apps/app/modules/watch-bridge/ios/WatchBridge.podspec	
