@@ -16,12 +16,12 @@
 # not, which since 2026-08-23 is none of the four. Detected, not listed: see
 # SELF_SHIPS in the lane below.
 #
-# Each repo's OWN lane does the work — tools/dtp.sh in the five apps, which
+# Each repo's OWN lane does the work — tools/dtp.sh in each app, which
 # already bump the minor version, refuse a dirty tree or a non-main branch,
-# never tag around a failed deploy, and push atomically. (PrivateApp, the
-# macOS-only native app, joined 2026-09-18: it carries no canon, so `core`
-# never cascades into it, and its Mac bundle IS its deploy — its lane takes
-# --web as a no-op rather than as "skip the platform build".) This adds exactly two
+# never tag around a failed deploy, and push atomically. (A private
+# target, named in .private-targets, rides along: it carries no canon, so
+# `core` never cascades into it, and its own build IS its deploy — its lane
+# takes --web as a no-op rather than as "skip the platform build".) This adds exactly two
 # things: the ORDER (bin/plan.sh's graph, the one bin/deploy.sh sources too) and
 # the fact that stopping at a failure leaves everything after it unshipped
 # rather than half-shipped in an order nobody chose.

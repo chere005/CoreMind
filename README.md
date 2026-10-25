@@ -17,9 +17,9 @@ than one app carries.
 The consumers are [CalMind](https://github.com/chere005/CalMind),
 [ChefMind](https://github.com/chere005/ChefMind),
 [MyCalMind](https://github.com/chere005/MyCalMind) and
-[AcctMind](https://github.com/chere005/AcctMind);
-[PrivateApp](https://github.com/chere005/PrivateApp) carries no canon and is in
-the suite for its release lane only. They are expected as sibling checkouts
+[AcctMind](https://github.com/chere005/AcctMind). Private targets, if any,
+are named one per line in an untracked, gitignored `.private-targets` at the
+checkout root (default none) and ride along after these. They are expected as sibling checkouts
 of this one; `MIND_DIR` overrides the parent directory.
 
 ## Running it

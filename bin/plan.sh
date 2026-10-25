@@ -23,13 +23,38 @@
 #       instead of in somebody's memory.
 #
 # Nothing else has an edge: AcctMind is independent, MyCalMind talks to no
-# server at all, and PrivateApp (2026-09-18) is a native macOS app that
-# carries no canon — its deploy is its Mac bundle, installed locally.
+# server at all, and a private target (see below) carries no canon and has no
+# edges either — its lane is its own, and it runs last.
 
 # Deployment order for the whole suite. Every run is a subset of this list, in
 # this sequence — so a cascade can never reorder itself into shipping ChefMind
 # before the API it checks.
-ORDER="core CalMind ChefMind AcctMind MyCalMind PrivateApp"
+PUBLIC_ORDER="core CalMind ChefMind AcctMind MyCalMind"
+
+# PRIVATE TARGETS. A target its owner keeps out of this repo is named, one per
+# line, in an UNTRACKED file `.private-targets` at the CoreMind checkout root
+# (gitignored; blank lines and `#` comments are ignored; no file = none). Each
+# is appended to the order AFTER the public targets, so a run's sequence is the
+# same as if it were listed here. The file is per machine. PRIVATE_TARGETS_FILE
+# points elsewhere (the tests use it); a name must be a bare directory name.
+PRIVATE=""
+_pf="${PRIVATE_TARGETS_FILE:-.private-targets}"
+if [ -f "$_pf" ]; then
+  while IFS= read -r _line || [ -n "$_line" ]; do
+    _line=${_line%%#*}
+    _line=$(printf '%s' "$_line" | tr -d ' \t\r')
+    [ -n "$_line" ] || continue
+    case "$_line" in
+      *[!A-Za-z0-9_.-]*|.*|-*)
+        echo "$_pf: a line that is not a bare target name" >&2; exit 1 ;;
+    esac
+    case " $PUBLIC_ORDER $PRIVATE " in
+      *" $_line "*) ;;
+      *) PRIVATE="$PRIVATE $_line" ;;
+    esac
+  done < "$_pf"
+fi
+ORDER="$PUBLIC_ORDER$PRIVATE"
 
 downstream_of() {
   case "$1" in
@@ -40,12 +65,12 @@ downstream_of() {
 }
 
 resolve_plan() {
-  [ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind, PrivateApp" >&2; exit 1; }
+  [ -n "$WANT" ] || { echo "name a target: all, core, CalMind, ChefMind, AcctMind, MyCalMind, and any private target" >&2; exit 1; }
 
   for T in $WANT; do
     case " $ORDER " in
       *" $T "*) ;;
-      *) echo "unknown target '$T' — one of: $ORDER" >&2; exit 1 ;;
+      *) echo "unknown target '$T' — one of: $PUBLIC_ORDER, or a private target" >&2; exit 1 ;;
     esac
   done
 

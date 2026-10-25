@@ -27,6 +27,7 @@ npm run dtp -- --only core        # CoreMind alone: propagate canon, bin/check-d
 npm run dtp -- all                # every repo, core first
 npm run tdtp -- all --platforms   # test-first, whole suite, plus each app's macOS/iOS/Android builds
 sh bin/check-heavy-lock.sh        # also required after any change to canon/tools/heavy-lock.sh
+sh bin/check-plan.sh              # the release order and the .private-targets extension (seconds)
 ```
 
 - A bare `core` cascades into CalMind, ChefMind, AcctMind. `check-heavy-lock.sh` stays out of `npm test` (waits ~2 min; core lane runs `npm test` every tdtp).
@@ -35,7 +36,7 @@ sh bin/check-heavy-lock.sh        # also required after any change to canon/tool
 
 CoreMind ships nothing of its own; it tags itself and stops. Platform builds belong to the app.
 
-- Each app carries `tools/build-platforms.sh`; `bin/dtp.sh` DETECTS it and passes `--platforms` through (`--web` = release with no platform builds, when unset). CoreMind owns the ORDER and the pass-through only. PrivateApp's script knows only `--mac`, REFUSES `--ios`/`--android` by name; its lane takes `--web` as a no-op.
+- Each app carries `tools/build-platforms.sh`; `bin/dtp.sh` DETECTS it and passes `--platforms` through (`--web` = release with no platform builds, when unset). CoreMind owns the ORDER and the pass-through only. Private targets ride along: name them, one per line, in the untracked, gitignored `.private-targets` at the checkout root (default none, per machine); `bin/plan.sh` appends them last and `bin/deploy.sh`/`bin/dtp.sh` run their own `tools/` lane, taking `--web` as a no-op.
 - `bin/build-platforms.sh` is the **fallback**, run only for an app with no script of its own (today none) and the ORIGIN of the copies; keep it complete. Flags: `--mac`/`--ios`/`--android` subset, `--dry-run` plan only, none = all three.
 - **macOS:** Tauri bundle for CalMind, ChefMind, AcctMind; Mac Catalyst app for MyCalMind (no Tauri). Copied into `/Applications` and verified.
 - **Catalyst:** MyCalMind's `withMacCatalyst` plugin plus the script cover: widget target needs `SUPPORTS_MACCATALYST`; arm64 only (no x86_64 slice); builds from source (`EXPO_USE_PRECOMPILED_MODULES=0 RCT_USE_PREBUILT_RNCORE=0`); vendored ReactNativeDependencies malformed for that slice.

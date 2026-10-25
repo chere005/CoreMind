@@ -7,3 +7,6 @@ node_modules/
 !.claude/launch.json
 .status-history.json
 .status-phase
+
+# Private targets: per machine, never tracked (see bin/plan.sh)
+.private-targets

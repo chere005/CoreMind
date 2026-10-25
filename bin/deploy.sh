@@ -107,11 +107,16 @@ for T in $PLAN; do
       R=$(repo_at MyCalMind)
       ( cd "$R" && sh tools/deploy-device.sh $DRYFLAG )
       ;;
-    PrivateApp)
-      R=$(repo_at PrivateApp)
-      # The Release .app, smoked and installed at /Applications — there is no
-      # server and no store, so that IS the deploy. --quick is accepted there
-      # and does nothing: it has no fast gate to skip.
+    *)
+      # A private target (.private-targets, read by bin/plan.sh); anything
+      # else is refused. No server and no store: the local install IS the
+      # deploy. --quick is accepted there and does nothing if it has no fast
+      # gate to skip.
+      case " $PRIVATE " in
+        *" $T "*) ;;
+        *) echo "no deploy lane for '$T'" >&2; exit 1 ;;
+      esac
+      R=$(repo_at "$T")
       ( cd "$R" && sh tools/deploy.sh $QUICK $DRYFLAG )
       ;;
   esac

@@ -152,7 +152,7 @@ fi
 # Now a block that finds another build holding the lock — this repo's or an
 # app's, this session's or another's — waits for it, saying whose it is,
 # instead of running beside it. A build that never takes the lock is not seen
-# at all: PrivateApp's and PrivateAppCross's, the TestMindSuite forks', an
+# at all: a private target's, the TestMindSuite forks', an
 # xcodebuild, gradle or cargo typed by hand, a build from Xcode's own window.
 #
 # Taken around each BLOCK, because a block is the unit the apps' lanes run one

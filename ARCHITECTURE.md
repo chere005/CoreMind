@@ -27,7 +27,6 @@ exactly who mirrors them, and proves the mirrors match.
 | [ChefMind](https://github.com/chere005/ChefMind) | recipes + shopping list on CalMind's server, kept apart by a sync space | core, spec, app layer and its OCR module, tools, desktop |
 | [MyCalMind](https://github.com/chere005/MyCalMind) | CalMind with the server taken out; iOS+watch, Bonjour mirroring | core, spec, app layer and its OCR module, `tools/sync-lock-versions.mjs`, `tools/tdtp.sh`, `tools/heavy-lock.sh` |
 | [AcctMind](https://github.com/chere005/AcctMind) | the ledger — a sibling RE-IMPLEMENTATION of the architecture, not a clone | desktop shell; three release helpers; the drop rule and the fold rule; the pick bar, as a fork |
-| [PrivateApp](https://github.com/chere005/PrivateApp) | a macOS-only writing app — markdown notes beside a live camera; native Swift, no web layer | nothing — release lanes only |
 
 ### AcctMind, the deliberate outlier
 
@@ -53,15 +52,14 @@ ideas worth upstreaming: its `stable()` is CalMind's `canon()` with an extra
 fix, its `patch-web-html` stamps a build.json, its core tsconfig splits tests
 out with `"types": []`.
 
-### PrivateApp, further out still
+### Private targets
 
-`PrivateApp` (since 2026-09-18) is independent too, and further out than
-AcctMind: a native Swift app with no TypeScript and no canon bytes, in the
-suite only for its release lane — `bin/dtp.sh` orders it last, its deploy is
-its own Mac bundle installed at /Applications, and it reports to the status
-page through `bin/report-status.sh` like the rest. There is no
-`consumers/PrivateApp.tsv` because there is nothing it carries; a manifest with
-no rows would be a claim the check cannot fail.
+Targets the owner keeps private are listed, one name per line, in an
+untracked, gitignored `.private-targets` at the checkout root (default: none;
+the file is per machine). They carry no canon bytes, so they have no
+`consumers/*.tsv` manifest; `bin/plan.sh` appends them after the public
+targets, and `bin/deploy.sh` / `bin/dtp.sh` run their own `tools/` lane and
+report to the status page like the rest.
 
 ## The map
 
@@ -137,7 +135,7 @@ Both edges are real, not tidy:
 
 `AcctMind` is independent and `MyCalMind` talks to no server at all —
 MyCalMind installs onto a connected iPhone, so it never rides an unattended
-cascade: name it, or pass `--with-devices` (which `all` implies). PrivateApp is
+cascade: name it, or pass `--with-devices` (which `all` implies). A private target is
 independent as well, for the reasons above.
 
 ## The protocol contract
@@ -201,9 +199,8 @@ has the details and the proofs.
 What takes it today: the four apps' `tools/build-platforms.sh`, MyCalMind's
 `tools/deploy-device.sh`, AcctMind's `desktop/smoke.sh` when it builds, and
 the fallback here. It looks for no build process, only for the lock, so it
-does not see a build that never takes it: PrivateApp's (in the dtp ORDER,
-building with xcodebuild, carrying no copy of the helper), PrivateAppCross's,
-the TestMindSuite forks', an xcodebuild, gradle or cargo typed by hand, or a
+does not see a build that never takes it: a private target's (in the dtp
+ORDER, carrying no copy of the helper), the TestMindSuite forks', an xcodebuild, gradle or cargo typed by hand, or a
 build started from Xcode's own window. Beside one of those, a lane still
 builds at the same time.
 
