@@ -164,3 +164,6 @@ exact	canon/app/targets/watch/ReminderListView.swift	apps/app/targets/watch/Remi
 exact	canon/app/targets/watch/WatchFormat.swift	apps/app/targets/watch/WatchFormat.swift	
 exact	canon/app/targets/watch/WatchTabs.swift	apps/app/targets/watch/WatchTabs.swift	
 exact	canon/app/modules/watch-bridge/ios/WatchBridge.podspec	apps/app/modules/watch-bridge/ios/WatchBridge.podspec	
+exact	canon/packages/core/src/dailylog.ts	packages/core/src/dailylog.ts	
+exact	canon/packages/core/test/dailylog.test.ts	packages/core/test/dailylog.test.ts	
+exact	canon/spec/dailylog.json	spec/dailylog.json	

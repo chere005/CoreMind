@@ -129,3 +129,6 @@ exact	canon/tools/heavy-lock.sh	tools/heavy-lock.sh
 exact	canon/app/src/folds.ts	app/src/folds.ts	
 exact	canon/packages/core/src/folds.ts	packages/core/src/folds.ts	
 exact	canon/packages/core/test/folds.test.ts	packages/core/test/folds.test.ts	
+exact	canon/packages/core/src/dailylog.ts	packages/core/src/dailylog.ts	
+exact	canon/packages/core/test/dailylog.test.ts	packages/core/test/dailylog.test.ts	
+exact	canon/spec/dailylog.json	spec/dailylog.json	

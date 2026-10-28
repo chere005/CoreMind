@@ -23,3 +23,4 @@ export * from './backup';
 export * from './search';
 export * from './folds';
 export * from './chefdate';
+export * from './dailylog';
