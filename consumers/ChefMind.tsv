@@ -132,3 +132,4 @@ exact	canon/packages/core/test/folds.test.ts	packages/core/test/folds.test.ts
 exact	canon/packages/core/src/dailylog.ts	packages/core/src/dailylog.ts	
 exact	canon/packages/core/test/dailylog.test.ts	packages/core/test/dailylog.test.ts	
 exact	canon/spec/dailylog.json	spec/dailylog.json	
+exact	canon/spec/richtext.json	spec/richtext.json	shared list-edit contract
